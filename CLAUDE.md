@@ -192,7 +192,7 @@ Skip: 단순 오타, 주석, 포맷팅, `--no-check`
 `/confidence-check`, `/verify`, `/build-fix`, `/checkpoint`, `/audit`
 
 ### By Domain
-- **FastAPI**: `/fastapi`, `/domain-layer`, `/api-versioning`, `/middleware`, `/environment`
+- **FastAPI**: `/fastapi`, `/domain-layer`, `/api-design`, `/middleware`, `/environment`
 - **Data**: `/sqlalchemy`, `/alembic`, `/pydantic-schema`
 - **Quality**: `/testing`, `/error-handling`, `/debugging`, `/production-checklist`, `/audit`
 - **Workflow**: `/feature-planner`, `/gap-analysis`, `/learn`, `/checkpoint`

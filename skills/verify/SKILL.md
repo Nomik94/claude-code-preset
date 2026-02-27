@@ -23,7 +23,7 @@ poetry run mypy --strict app/
 poetry run lint-imports
 
 ### 4. 테스트
-poetry run pytest --cov=app --cov-report=term-missing
+poetry run pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 
 ### 5. 보안
 poetry run ruff check --select S .

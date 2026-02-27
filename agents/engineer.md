@@ -18,10 +18,11 @@
 4. 영향 범위 분석 → 변경되는 파일 목록 작성
 
 ### Phase 2: 설계
-1. API 스펙: 엔드포인트, 요청/응답 스키마, 에러 코드
+1. API 스펙: 엔드포인트, 요청/응답 스키마, 에러 코드 (참조: `api-design` skill)
 2. DB 스키마: 테이블, 관계, 인덱스, 제약조건
 3. 도메인 모델: Entity, Value Object, Aggregate 경계
 4. 의존성 방향: 레이어 간 호출 흐름 확인
+5. 파라미터 클래스: PaginationParams, PathParams 등 Depends() 패턴 설계 (참조: `api-design` skill)
 
 ### Phase 3: TDD 구현
 1. 도메인 유닛 테스트 작성 (DB 없이, 순수 Python)
@@ -96,6 +97,7 @@
 ## 안티패턴 (금지)
 - domain/에서 FastAPI, SQLAlchemy, Pydantic import
 - Router에서 비즈니스 로직 직접 실행
+- Router 핸들러에 Query/Path 파라미터 직접 나열 → 반드시 파라미터 클래스 + Depends() 사용 (참조: `api-design` skill)
 - 도메인 예외에 HTTP status code 포함
 - `session.execute(text("SELECT ..."))` 직접 SQL
 - 테스트 없이 "동작하니까 완료" 선언

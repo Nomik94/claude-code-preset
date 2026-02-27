@@ -112,7 +112,7 @@ claude
 │   │  # Core FastAPI
 │   ├── fastapi/               # 프로젝트 구조, DI, Ruff/mypy 설정
 │   ├── domain-layer/          # Entity, VO, Aggregate, Repository Protocol
-│   ├── api-versioning/        # EndpointPath, Sub-Application
+│   ├── api-design/            # REST API 설계, 파라미터 클래스, CRUD 패턴, EndpointPath
 │   ├── middleware/             # CORS, Auth, Rate Limit, 미들웨어 순서
 │   ├── environment/           # pydantic-settings, .env, 멀티환경
 │   ├── websocket/             # ConnectionManager, 룸, Redis Pub/Sub
@@ -330,7 +330,7 @@ CLAUDE.md에 내장된 3가지 안전 장치:
 - `/audit` — 커밋/PR 전 규칙 위반 검사
 
 ### By Domain
-- **FastAPI**: `/fastapi`, `/domain-layer`, `/api-versioning`, `/middleware`, `/environment`
+- **FastAPI**: `/fastapi`, `/domain-layer`, `/api-design`, `/middleware`, `/environment`
 - **Data**: `/sqlalchemy`, `/alembic`, `/pydantic-schema`
 - **Async**: `/background-tasks`, `/websocket`
 - **Quality**: `/testing`, `/debugging`, `/error-handling`, `/security-audit`, `/python-best-practices`
@@ -413,7 +413,7 @@ cp -r ~/.claude/backup-{timestamp}/* ~/.claude/
 
 | 항목 | 수량 |
 |------|------|
-| 총 파일 | 50개 |
+| 총 파일 | 49개 |
 | Skills | 33개 (도메인 28 + 에이전트 wrapper 5) |
 | Agents | 5개 (engineer, reviewer, analyst, devops, writer) |
 | Hooks | 8개 (PostToolUse 3 + Session 2 + Context 3) |

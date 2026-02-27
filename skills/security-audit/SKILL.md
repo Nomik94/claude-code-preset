@@ -53,39 +53,55 @@ async def delete_user(id: int): ...
 
 ## 예외 계층 구조
 
-```
-AppException (HTTP-aware)
-├── NotFoundException(404)
-├── AlreadyExistsException(409)
-├── BusinessException(422)
-├── UnauthorizedException(401)
-└── ForbiddenException(403)
+`error-handling` skill과 동일한 계층 구조를 따른다.
 
+```
 DomainException (HTTP-unaware, pure business)
-├── UserNotFoundException
-├── EmailAlreadyExistsException
-├── InvalidOrderStatusTransitionError
-└── InsufficientStockException
+├── EntityNotFoundException          # 404로 매핑
+├── BusinessRuleViolation            # 422로 매핑
+├── DuplicateEntityException         # 409로 매핑
+└── PermissionDeniedException        # 403으로 매핑
+
+AppException (HTTP-aware, application layer)
+└── status_code + code + message + details
+```
+
+보안 관련 도메인 예외 예시:
+
+```
+EntityNotFoundException
+├── UserNotFoundException (entity="User")
+├── TokenNotFoundException (entity="Token")
+
+DuplicateEntityException
+├── EmailAlreadyExistsException (entity="User", field="email")
+
+BusinessRuleViolation
+├── InvalidOrderStatusTransitionError (code="ORDER_INVALID_TRANSITION")
+├── InsufficientStockException (code="STOCK_INSUFFICIENT")
 ```
 
 ## 예외 핸들러 등록
 
+`error-handling` skill의 패턴을 따른다. DomainException을 일괄 처리하며
+`error_mapping.py`의 DOMAIN_STATUS_MAP으로 HTTP 상태 코드를 결정한다.
+
 ```python
 def register_exception_handlers(app: FastAPI) -> None:
-    @app.exception_handler(AppException)
-    async def app_handler(request, exc):
-        return JSONResponse(status_code=exc.status_code,
-            content={"success": False, "error": {"code": exc.code, "message": exc.message}})
+    app.add_exception_handler(AppException, app_exception_handler)
+    app.add_exception_handler(DomainException, domain_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(Exception, unhandled_exception_handler)
+```
 
-    @app.exception_handler(UserNotFoundException)
-    async def user_not_found(request, exc):
-        return JSONResponse(status_code=404, content={"success": False, "error": {...}})
+에러 응답 형식 (모든 에러 동일):
 
-    @app.exception_handler(Exception)
-    async def unhandled(request, exc):
-        logger.error("unhandled_exception", exc_info=exc)
-        return JSONResponse(status_code=500,
-            content={"success": False, "error": {"code": "INTERNAL_ERROR"}})
+```json
+{
+  "code": "USER_NOT_FOUND",
+  "message": "User with id '42' not found",
+  "details": {}
+}
 ```
 
 ## 패스워드 해싱 (Value Object)

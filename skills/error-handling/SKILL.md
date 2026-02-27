@@ -102,12 +102,12 @@ def resolve_status(exc: DomainException) -> int:
 
 ```python
 # shared/dto/error.py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class ErrorResponse(BaseModel):
     code: str
     message: str
-    details: dict = {}
+    details: dict = Field(default_factory=dict)
 ```
 
 ## 에러 코드 규칙

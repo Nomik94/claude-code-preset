@@ -68,7 +68,7 @@ description: |
 ## 6. API
 
 - [ ] OpenAPI 문서 정확하고 접근 가능: `/docs`, `/redoc`
-- [ ] 모든 에러 응답이 일관된 스키마 준수 (`detail`, `code`)
+- [ ] 모든 에러 응답이 일관된 스키마 준수 (`code`, `message`, `details`)
 - [ ] 모든 목록 엔드포인트에 `limit`/`offset` 또는 커서 페이지네이션
 - [ ] API 버저닝 적용: `/api/v1/...`
 - [ ] OpenAPI 스키마에 요청/응답 예시 포함

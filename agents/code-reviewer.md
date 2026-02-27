@@ -106,6 +106,7 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 - [ ] domain/에 framework import 없음
 - [ ] Repository는 Protocol로 정의
 - [ ] EndpointPath 헬퍼로 경로 정의
+- [ ] 파라미터 클래스 + Depends() 사용 (핸들러에 Query/Path 직접 나열 금지, 참조: `api-design` skill)
 - [ ] Pydantic 스키마로 입력 검증
 - [ ] 도메인 예외가 HTTP 코드를 모름
 - [ ] 도메인 유닛 테스트 DB 없이 검증

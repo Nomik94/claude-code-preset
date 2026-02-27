@@ -40,6 +40,11 @@ async def get_user(user_id: int) -> User | None:
 - 함수/클래스 복잡도
 - Import 정리
 - Python 3.12+ 최신 문법 (StrEnum, dataclass(slots=True) 등)
+- Pydantic v2 필수 패턴:
+  - `model_config = ConfigDict(...)` (not `class Config:`)
+  - `model_dump()` / `model_validate()` (not `.dict()` / `.parse_obj()`)
+  - `field_validator` / `model_validator` (not `@validator`)
+  - `from_attributes=True` (not `orm_mode = True`)
 
 **검증**: `poetry run ruff check .` / `poetry run ruff format --check .`
 
