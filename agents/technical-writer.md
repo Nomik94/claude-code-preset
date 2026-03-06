@@ -15,7 +15,7 @@
 
 ### Phase 1: 코드베이스 분석
 1. **프로젝트 구조 탐색**: 디렉토리 구조, 레이어 분리 패턴 파악
-2. **핵심 흐름 추적**: entry point → router → service → domain → repository
+2. **핵심 흐름 추적**: entry point → controller → service → domain → repository
 3. **의존성 분석**: pyproject.toml에서 기술 스택 확인
 4. **설정 분석**: 환경 변수, 설정 파일, Docker 구성
 5. **테스트 구조**: 테스트 디렉토리, 커버리지 현황

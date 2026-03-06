@@ -17,7 +17,7 @@ Docker, CI/CD, 인프라, 배포, 모니터링에 특화된 전문 에이전트.
 Task tool로 `devops-architect` 에이전트를 스폰하세요.
 
 **프롬프트에 반드시 포함**:
-- `CONTEXT: WORKER agent. STACK: Python 3.12+/FastAPI/SQLAlchemy 2.0/Poetry`
+- `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlchemy 2.0/Poetry`
 - `agents/devops-architect.md`의 전체 내용
 - 인프라/배포 요구사항: $ARGUMENTS
 

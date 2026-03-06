@@ -6,17 +6,18 @@
 - Technical terms: English when common (WebSocket, API, etc.)
 
 ## Stack
-- Python 3.12+ / FastAPI (async) / SQLAlchemy 2.0 (async)
+- Python 3.13+ / FastAPI (async) / SQLAlchemy 2.0 (async)
 - Alembic / Pydantic v2 / pydantic-settings
-- python-jose (JWT) + passlib (bcrypt)
+- PyJWT + passlib (bcrypt)
 - **Poetry** (mandatory, no pip/uv/requirements.txt)
 - Ruff + mypy --strict / pytest + pytest-asyncio + httpx
 - structlog (JSON prod, console dev) / cashews or redis.asyncio
 - Docker + docker-compose
 
 ## Architecture
-- **Domain Layer**: `router → application/service → domain/entity → infrastructure/repository`
-- **DI**: Depends (small) | Dishka (large)
+- **Domain Layer**: `controllers → application/service → domain/entity → infrastructure/repository`
+- **Folder-First**: controllers/, dto/, exceptions/, constants/는 처음부터 폴더로 생성
+- **DI**: Depends (small) | Manual Container (medium) | Dishka (large)
 - **API Versioning**: `/{client}/v{version}/{domain}/{action}` via EndpointPath helper
 - **Sub-Application**: admin/app/web 분리, 클라이언트별 미들웨어/Swagger
 
@@ -27,10 +28,13 @@
 4. **Protocol ports** — Repository interfaces use `typing.Protocol`
 5. **Type safety** — mypy strict mode, Ruff comprehensive rules
 6. **Test pyramid** — Unit (domain, no DB) > Integration (API) > E2E
-7. **EndpointPath** — no hardcoded path strings in routers
-8. **Python 3.12+ 문법 필수** — 아래 Modern Syntax 섹션 준수
+7. **EndpointPath** — no hardcoded path strings in controllers
+8. **Python 3.13+ 문법 필수** — 아래 Modern Syntax 섹션 준수
+9. **Folder-first** — controllers/, dto/, exceptions/, constants/는 처음부터 폴더
+10. **lazy="raise"** — relationship 기본값, N+1 컴파일타임 방지
+11. **Mapping table** — 도메인 예외→HTTP 변환은 mappings.py 한 곳에서 관리
 
-## Modern Python Syntax (3.12+)
+## Modern Python Syntax (3.13+)
 
 **반드시 최신 문법만 사용. 레거시 패턴 금지.**
 
@@ -76,7 +80,7 @@
 | AskUserQuestion 사용 | 결과를 절대 경로로 보고 |
 | 직접 코드 작성 금지 | 서브에이전트 스폰 금지 |
 
-Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.12+/FastAPI/SQLAlchemy 2.0/Poetry`
+Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlchemy 2.0/Poetry`
 
 ### 서브에이전트 전략
 - 메인 컨텍스트 보호: 조사, 탐색, 병렬 분석은 서브에이전트에 위임
@@ -139,7 +143,7 @@ Skip: 단순 오타, 주석, 포맷팅, `--no-check`
 ## Git Rules
 - 세션 시작: `git status` + `git branch`
 - Feature branch only, never main/master
-- Incremental commits, meaningful messages
+- **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
 - `git diff` before staging
 - No Co-Authored-By
 

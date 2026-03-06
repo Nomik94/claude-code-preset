@@ -12,21 +12,41 @@ description: |
 
 # Docker 스킬
 
+## .dockerignore
+
+MUST: 프로젝트 루트에 `.dockerignore` 파일이 존재해야 한다.
+
+```
+.venv/
+__pycache__/
+.git/
+*.pyc
+.env
+.env.*
+node_modules/
+tests/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+```
+
+**MUST: `.env` 파일은 반드시 제외한다.** 이미지가 레지스트리에 push될 경우 시크릿이 유출되는 보안 사고로 이어진다. `.env`와 `.env.*` 패턴 모두 명시적으로 제외할 것.
+
 ## Dockerfile (FastAPI + Poetry)
 
 ```dockerfile
-# ── Build ──
-FROM python:3.12-slim AS builder
+# -- Build --
+FROM python:3.13-slim AS builder
 RUN pip install poetry
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false \
     && poetry install --only main --no-interaction --no-ansi
 
-# ── Runtime ──
-FROM python:3.12-slim AS runtime
+# -- Runtime --
+FROM python:3.13-slim AS runtime
 WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY app/ ./app/
 COPY migrations/ ./migrations/
@@ -92,9 +112,22 @@ volumes:
   pgdata:
 ```
 
-## 베스트 프랙티스
-1. 빌드/런타임 분리 — 이미지 크기 절감
-2. Non-root 유저 — 보안
-3. Health check — 오케스트레이션 준비 상태 확인
-4. 레이어 캐싱 — 소스보다 pyproject.toml 먼저 복사
-5. `.dockerignore` — .git, tests, docs, .env, __pycache__, *.md 제외
+## 체크리스트
+
+- [ ] `.dockerignore` 파일이 존재하고 `.env`, `.env.*`가 제외되어 있는가
+- [ ] `FROM python:3.13-slim` 사용 (3.12 이하 금지)
+- [ ] site-packages 경로가 `python3.13`인가
+- [ ] 멀티스테이지 빌드로 빌드/런타임 분리되어 있는가
+- [ ] non-root 유저(`appuser`)로 실행하는가
+- [ ] healthcheck가 DB, Redis 등 의존 서비스에 설정되어 있는가
+- [ ] 레이어 캐싱: `pyproject.toml` + `poetry.lock`을 소스 코드보다 먼저 COPY하는가
+- [ ] 하드코딩된 시크릿이 Dockerfile/compose에 없는가
+
+## 핵심 규칙
+
+1. **MUST** `.dockerignore`에 `.env`와 `.env.*` 포함 -- 보안 필수
+2. **MUST** 멀티스테이지 빌드 -- 빌드 도구가 런타임 이미지에 포함되면 안 된다
+3. **MUST** non-root 유저 -- 컨테이너 탈출 시 피해 최소화
+4. **MUST** healthcheck -- 오케스트레이션 준비 상태 확인
+5. **MUST** `pyproject.toml` 먼저 COPY -- 레이어 캐싱 활용
+6. **MUST** `python:3.13-slim` 기반 이미지 사용

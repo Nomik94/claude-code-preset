@@ -146,7 +146,7 @@ poetry run kernprof -l -v app/services/heavy_service.py
 
 | 에러 | 흔한 원인 | 해결 |
 |------|----------|------|
-| `MissingGreenlet` | async 컨텍스트에서 lazy load | `selectinload()` 추가 |
+| `MissingGreenlet` | async 컨텍스트에서 lazy load (lazy="raise" 미적용) | lazy="raise" 기본 설정 + `selectinload()` 명시 |
 | `DetachedInstanceError` | session 밖에서 relationship 접근 | `expire_on_commit=False` |
 | `IntegrityError` | unique 제약 위반 | 중복 체크 로직 추가 |
 | `TimeoutError` (DB) | connection pool 고갈 | pool_size 조정, 세션 누수 확인 |

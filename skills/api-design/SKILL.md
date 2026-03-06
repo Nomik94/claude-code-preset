@@ -10,11 +10,26 @@ description: |
   admin/app/web 분리, Sub-Application, 클라이언트별 Swagger, 클라이언트별 미들웨어,
   app.mount, 서브앱 구조, deprecated API, sunset, deprecation 처리.
   파라미터 클래스, Depends 파라미터, PaginationParams, PathParams,
-  Query/Path 파라미터 묶기, 파라미터 재사용, 핸들러 시그니처 정리.
+  Query/Path 파라미터 묶기, 파라미터 재사용, 핸들러 시그니처 정리,
+  controllers 폴더, controller 파일 구조, admin_controller, app_controller.
   NOT for: Pydantic 스키마 (pydantic-schema 참조), 에러 핸들링 설계 (error-handling 참조).
 ---
 
 # RESTful API 설계 패턴
+
+## Controllers 구조
+
+controllers/는 **처음부터 폴더**로 생성. 파일명은 `{role}_controller.py`.
+
+```
+controllers/
+  __init__.py
+  admin_controller.py   # admin Sub-Application 라우터
+  app_controller.py     # app Sub-Application 라우터
+  web_controller.py     # web Sub-Application 라우터
+```
+
+MUST: 단일 `router.py` 파일 금지. 클라이언트별 controller 파일 분리 필수.
 
 ## URL 패턴 & 버저닝
 
@@ -51,16 +66,17 @@ def web(domain: str, **kwargs) -> EndpointPath:
     return EndpointPath("web", domain, **kwargs)
 ```
 
-### 사용법
+### 사용법 (controller 내부)
 
 ```python
-from core.util.versioning import admin
+# controllers/app_controller.py
+from core.util.versioning import app
 router = APIRouter()
-api = admin("attendance")
+api = app("attendance")
 
-@router.get(api("/list"))              # /admin/v1/attendance/list
-@router.get(api("/detail/{id}"))       # /admin/v1/attendance/detail/{id}
-@router.get(api("/list", v=2))         # /admin/v2/attendance/list
+@router.get(api("/list"))              # /app/v1/attendance/list
+@router.get(api("/detail/{id}"))       # /app/v1/attendance/detail/{id}
+@router.get(api("/list", v=2))         # /app/v2/attendance/list
 ```
 
 ## Sub-Application 구조
@@ -71,9 +87,17 @@ admin_app = FastAPI(title="Admin API")
 app_app = FastAPI(title="App API")
 web_app = FastAPI(title="Web API")
 
-app.mount("/admin", admin_app)  # /admin/docs → Admin Swagger
-app.mount("/app", app_app)      # /app/docs → App Swagger
-app.mount("/web", web_app)      # /web/docs → Web Swagger
+app.mount("/admin", admin_app)  # /admin/docs -> Admin Swagger
+app.mount("/app", app_app)      # /app/docs -> App Swagger
+app.mount("/web", web_app)      # /web/docs -> Web Swagger
+```
+
+MUST: 각 Sub-Application에 해당 controller의 router를 include.
+
+```python
+# admin_app에는 admin_controller.router만 포함
+from controllers.admin_controller import router as admin_router
+admin_app.include_router(admin_router)
 ```
 
 ### 클라이언트별 미들웨어
@@ -91,18 +115,17 @@ web_app.add_middleware(WebSessionMiddleware)  # /web/** only
 |-----------|------------|------|
 | `/getUsers` | `GET api("/list")` | 동사는 HTTP 메서드로 표현 |
 | `/user` | `/users` | 컬렉션은 복수형 |
-| `/user_list` | `api("/list")` | list/all 접미사 불필요 |
 | `/userOrders` | `api("/{id}/orders")` | camelCase 금지, 중첩 사용 |
 | `/Users` | `/users` | 소문자 kebab-case 필수 |
 | 하드코딩 경로 | `EndpointPath` 사용 | CI 린트 강제 |
 
 ```
-# 중첩 리소스 (소유 관계) — 최대 2단계
+# 중첩 리소스 (소유 관계) -- 최대 2단계
 GET  api("/{user_id}/orders")              # 사용자의 주문 목록
 POST api("/{user_id}/orders")              # 사용자에게 주문 생성
 GET  api("/{user_id}/orders/{order_id}")   # 특정 주문 조회
 
-# 최대 2단계 초과 → 쿼리 파라미터로 대체
+# 최대 2단계 초과 -> 쿼리 파라미터로 대체
 # BAD:  /users/{id}/orders/{id}/items/{id}/reviews
 # GOOD: /reviews?order_item_id={id}
 ```
@@ -119,43 +142,30 @@ GET  api("/{user_id}/orders/{order_id}")   # 특정 주문 조회
 
 ### 상태 코드 가이드
 
-```python
-# 2xx Success
-200  # OK — GET, PUT, PATCH 성공
-201  # Created — POST 성공 (Location 헤더 포함)
-204  # No Content — DELETE 성공, 응답 본문 없음
-
-# 4xx Client Error
-400  # Bad Request — 잘못된 요청 본문/파라미터
-401  # Unauthorized — 인증 필요 (토큰 없음/만료)
-403  # Forbidden — 인증됨, 권한 부족
-404  # Not Found — 리소스 없음
-409  # Conflict — 중복 생성, 상태 충돌, 핸들링 되고 있는 비즈니스 로직의 예외처리
-422  # Unprocessable Entity — 유효성 검증 실패 (FastAPI 기본)
-429  # Too Many Requests — Rate Limit 초과
-
-# 5xx Server Error
-500  # Internal Server Error — 서버 버그
-503  # Service Unavailable — 일시적 서비스 불가
-```
+| 코드 | 의미 | 사용처 |
+|------|------|--------|
+| 200 | OK | GET, PUT, PATCH 성공 |
+| 201 | Created | POST 성공 (Location 헤더 포함) |
+| 204 | No Content | DELETE 성공, 응답 본문 없음 |
+| 400 | Bad Request | 잘못된 요청 본문/파라미터 |
+| 401 | Unauthorized | 인증 필요 (토큰 없음/만료) |
+| 403 | Forbidden | 인증됨, 권한 부족 |
+| 404 | Not Found | 리소스 없음 |
+| 409 | Conflict | 중복 생성, 상태 충돌, 비즈니스 로직 예외 |
+| 422 | Unprocessable Entity | 유효성 검증 실패 (FastAPI 기본) |
+| 429 | Too Many Requests | Rate Limit 초과 |
+| 500 | Internal Server Error | 서버 버그 |
+| 503 | Service Unavailable | 일시적 서비스 불가 |
 
 ## 파라미터 클래스 패턴 (Depends)
 
-라우터 핸들러에 Path/Query 파라미터를 직접 나열하면 시그니처가 비대해지고 재사용이 불가능.
-**반드시 Pydantic BaseModel + `Depends()`로 파라미터를 클래스로 묶어서 사용.**
+MUST: 핸들러에 Query/Path 파라미터 직접 나열 금지. Pydantic BaseModel + `Depends()`로 묶어 사용.
 
 ### 공통 파라미터 클래스
 
 ```python
-from fastapi import Path, Query
-from pydantic import BaseModel, ConfigDict
-
-
 class PaginationParams(BaseModel):
-    """모든 목록 API에서 재사용하는 페이지네이션 파라미터."""
-
     model_config = ConfigDict(populate_by_name=True)
-
     page: int = Query(1, ge=1, description="Page number")
     size: int = Query(20, ge=1, le=100, description="Items per page")
     sort: str = Query("created_at", description="Sort field")
@@ -165,64 +175,29 @@ class PaginationParams(BaseModel):
 ### 도메인별 확장
 
 ```python
-from enum import StrEnum
-
-
-class UserStatus(StrEnum):
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    SUSPENDED = "suspended"
-
-
-class UserRole(StrEnum):
-    ADMIN = "admin"
-    USER = "user"
-    MANAGER = "manager"
-
-
 class UserListParams(PaginationParams):
-    """사용자 목록 조회 전용 필터 파라미터."""
-
     status: UserStatus | None = Query(None, description="Filter by status")
     role: UserRole | None = Query(None, description="Filter by role")
     search: str | None = Query(None, description="Search keyword")
 
-
 class UserPathParams(BaseModel):
-    """사용자 단일 리소스 경로 파라미터."""
-
     user_id: int = Path(..., gt=0, description="User ID")
 ```
 
-### 라우터 적용
+### Controller 적용
 
 ```python
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import Response
-from core.util.versioning import app
-
+# controllers/app_controller.py
 router = APIRouter()
 api = app("users")
 
-
-# GET /app/v1/users/list
 @router.get(api("/list"), response_model=PaginatedResponse[UserResponse])
 async def list_users(
     params: UserListParams = Depends(),
-    service: UserService = Depends(get_user_service),  # Application Service
+    service: UserService = Depends(get_user_service),
 ) -> PaginatedResponse[UserResponse]:
-    return await service.list_users(
-        page=params.page,
-        size=params.size,
-        sort=params.sort,
-        order=params.order,
-        status=params.status,
-        role=params.role,
-        search=params.search,
-    )
+    return await service.list_users(params)
 
-
-# GET /app/v1/users/detail/{user_id}
 @router.get(api("/detail/{user_id}"), response_model=UserResponse)
 async def get_user(
     path: UserPathParams = Depends(),
@@ -230,8 +205,6 @@ async def get_user(
 ) -> UserResponse:
     return await service.get_user(path.user_id)
 
-
-# POST /app/v1/users/create
 @router.post(api("/create"), response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     body: CreateUserRequest,
@@ -239,18 +212,14 @@ async def create_user(
 ) -> UserResponse:
     return await service.create_user(body)
 
-
-# PATCH /app/v1/users/update/{user_id}
 @router.patch(api("/update/{user_id}"), response_model=UserResponse)
 async def update_user(
     path: UserPathParams = Depends(),
-    body: UpdateUserRequest,
+    body: UpdateUserRequest = ...,
     service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     return await service.update_user(path.user_id, body)
 
-
-# DELETE /app/v1/users/delete/{user_id}
 @router.delete(api("/delete/{user_id}"), status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     path: UserPathParams = Depends(),
@@ -260,113 +229,36 @@ async def delete_user(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 ```
 
-### 중첩 리소스 라우터
-
-```python
-from core.util.versioning import app
-
-router = APIRouter()
-api = app("users")
-
-
-class UserOrderListParams(PaginationParams):
-    """사용자의 주문 목록 조회 파라미터."""
-
-    user_id: int = Path(..., gt=0, description="User ID")
-
-
-# GET /app/v1/users/{user_id}/orders
-@router.get(api("/{user_id}/orders"), response_model=PaginatedResponse[OrderResponse])
-async def list_user_orders(
-    params: UserOrderListParams = Depends(),
-    service: OrderService = Depends(get_order_service),
-) -> PaginatedResponse[OrderResponse]:
-    return await service.list_by_user(
-        params.user_id, page=params.page, size=params.size,
-    )
-```
-
-### 금지 패턴
-
-```python
-# BAD: 라우터 핸들러에 Query/Path 직접 나열
-@router.get(api("/list"))
-async def list_users(
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
-    sort: str = Query("created_at"),
-    order: str = Query("desc"),
-    status: str | None = Query(None),
-    role: str | None = Query(None),
-    search: str | None = Query(None),        # 시그니처 비대, 재사용 불가
-    service: UserService = Depends(get_user_service),
-) -> PaginatedResponse[UserResponse]: ...
-
-# GOOD: 파라미터 클래스로 묶어서 Depends() 사용
-@router.get(api("/list"))
-async def list_users(
-    params: UserListParams = Depends(),      # 깔끔, 재사용 가능
-    service: UserService = Depends(get_user_service),
-) -> PaginatedResponse[UserResponse]: ...
-```
-
 ## 필터링, 정렬, 검색
 
-```python
-# Query parameter 패턴
+```
 GET /app/v1/users/list?status=active&role=admin          # 필터링
 GET /app/v1/users/list?sort=created_at&order=desc        # 정렬
 GET /app/v1/users/list?search=kim                        # 검색
 GET /app/v1/users/list?page=2&size=20                    # 페이지네이션
 
-# 다중 값 필터
+# 다중 값 필터: status: list[str] = Query(default=[])
 GET /app/v1/orders/list?status=pending&status=processing
-# FastAPI: status: list[str] = Query(default=[])
 
 # 날짜 범위
 GET /app/v1/orders/list?created_after=2026-01-01&created_before=2026-02-01
-
-# 금지: 필터를 URL path에 넣지 않음
-# BAD:  GET /app/v1/users/active
-# GOOD: GET /app/v1/users/list?status=active
 ```
 
-### 정렬 패턴
+MUST: 필터를 URL path에 넣지 않음. `GET /users/active` 금지 -> `GET /users/list?status=active`.
 
-```python
-# 방법 1: sort + order (단순, 권장)
-GET /app/v1/users/list?sort=name&order=asc
-
-# 방법 2: prefix 방식 (다중 정렬)
-GET /app/v1/users/list?sort=-created_at,name   # created_at DESC, name ASC
-```
+정렬 패턴: `?sort=name&order=asc` (단순, 권장) 또는 `?sort=-created_at,name` (다중 정렬).
 
 ## 벌크 작업
 
 ```python
-from core.util.versioning import admin
-
-router = APIRouter()
+# controllers/admin_controller.py
 api = admin("users")
 
-# POST /admin/v1/users/bulk-delete
 @router.post(api("/bulk-delete"), status_code=status.HTTP_204_NO_CONTENT)
-async def bulk_delete_users(
-    body: BulkDeleteRequest,  # {"ids": [1, 2, 3]}
-    service: UserService = Depends(get_user_service),
-) -> Response:
-    await service.bulk_delete(body.ids)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+async def bulk_delete_users(body: BulkDeleteRequest, ...) -> Response: ...
 
-
-# POST /admin/v1/users/bulk-update-status
 @router.post(api("/bulk-update-status"), response_model=BulkOperationResponse)
-async def bulk_update_status(
-    body: BulkStatusUpdateRequest,  # {"ids": [1, 2, 3], "status": "inactive"}
-    service: UserService = Depends(get_user_service),
-) -> BulkOperationResponse:
-    return await service.bulk_update_status(body)
-
+async def bulk_update_status(body: BulkStatusUpdateRequest, ...) -> BulkOperationResponse: ...
 
 class BulkOperationResponse(BaseSchema):
     """Partial success 지원."""
@@ -379,23 +271,16 @@ class BulkOperationResponse(BaseSchema):
 ## 비-CRUD 액션
 
 ```python
-from core.util.versioning import app
-
-router = APIRouter()
-order_api = app("orders")
-user_api = app("users")
-
 # 방법 1: 서브리소스 액션 패턴 (복잡한 비즈니스 로직)
-@router.post(order_api("/{order_id}/cancel"))     # /app/v1/orders/{order_id}/cancel
-@router.post(order_api("/{order_id}/ship"))        # /app/v1/orders/{order_id}/ship
-@router.post(user_api("/{user_id}/activate"))      # /app/v1/users/{user_id}/activate
-@router.post(user_api("/{user_id}/reset-password"))# /app/v1/users/{user_id}/reset-password
+@router.post(order_api("/{order_id}/cancel"))
+@router.post(order_api("/{order_id}/ship"))
+@router.post(user_api("/{user_id}/reset-password"))
 
 # 방법 2: PATCH로 상태 필드 변경 (단순 필드 변경)
 # PATCH /app/v1/orders/update/{order_id}  {"status": "cancelled"}
-
-# 가이드: 비즈니스 로직이 복잡하면 방법 1, 단순 필드 변경이면 방법 2
 ```
+
+MUST: 비즈니스 로직이 복잡하면 방법 1, 단순 필드 변경이면 방법 2.
 
 ## Deprecation 처리
 
@@ -406,13 +291,9 @@ async def get_attendance_list(): ...
 
 ## Idempotency (멱등성)
 
+결제 등 중요 POST에는 `Idempotency-Key` 헤더 사용.
+
 ```python
-from core.util.versioning import app
-
-router = APIRouter()
-api = app("orders")
-
-# POST 중복 방지: Idempotency-Key 헤더 사용
 @router.post(api("/create"), status_code=status.HTTP_201_CREATED)
 async def create_order(
     body: CreateOrderRequest,
@@ -431,11 +312,12 @@ async def create_order(
 ```python
 # scripts/check_versioning.py
 PATTERN = re.compile(r'@router\.(get|post|put|patch|delete)\(\s*["\']/(admin|app|web)/v\d+')
-# Fails CI if found → enforce EndpointPath usage
+# Fails CI if found -> enforce EndpointPath usage
 ```
 
 ## 설계 체크리스트
 
+- [ ] controllers/ 폴더에 `{role}_controller.py` 파일 분리
 - [ ] EndpointPath 헬퍼로 경로 생성 (하드코딩 금지)
 - [ ] `/{client}/v{version}/{domain}/{action}` 패턴 준수
 - [ ] client별 Sub-Application 분리 (admin/app/web)

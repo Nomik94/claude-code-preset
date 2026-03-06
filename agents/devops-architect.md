@@ -48,7 +48,7 @@
 | 레이어 캐싱 순서 | 변경 빈도 낮은 것 먼저 (deps → code) |
 | `slim` 기반 이미지 | 공격 표면 감소, 이미지 크기 절감 |
 | HEALTHCHECK 포함 | 오케스트레이터 자동 복구 지원 |
-| 고정 버전 태그 | `python:3.12.12-slim` (latest 금지) |
+| 고정 버전 태그 | `python:3.13-slim` (latest 금지) |
 
 ## CI/CD 파이프라인
 

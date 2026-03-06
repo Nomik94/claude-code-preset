@@ -45,8 +45,8 @@
 ### 1. N+1 쿼리
 - **증상**: API 응답 느림, 쿼리 수가 데이터 수에 비례
 - **진단**: `echo=True`로 쿼리 수 확인
-- **원인**: relationship 접근 시 lazy loading
-- **수정**: `selectinload()` 또는 `joinedload()` 추가
+- **원인**: relationship lazy loading (lazy="raise" 미적용)
+- **수정**: lazy="raise" 기본 설정 + 필요 시 `selectinload()` 또는 `joinedload()` 명시
 
 ### 2. 트랜잭션 누수
 - **증상**: 간헐적 "connection is closed", 커넥션 풀 고갈
@@ -69,8 +69,8 @@
 ### 5. 미들웨어 순서 문제
 - **증상**: 인증 우회, CORS 실패, 로깅 누락
 - **진단**: 미들웨어 등록 순서 확인 (역순 실행)
-- **원인**: 미들웨어 등록 순서 오류
-- **수정**: 외→내 순서: CORS → Logging → Auth → Rate Limit
+- **원인**: 미들웨어 등록 순서 오류 (LIFO — 마지막 등록이 먼저 실행)
+- **수정**: 실행 순서: CORS(외) → RateLimit → RequestLogging(내) → 라우터
 
 ### 6. 의존성 캐싱
 - **증상**: 같은 요청에서 다른 세션 인스턴스, 데이터 불일치

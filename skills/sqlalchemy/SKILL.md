@@ -1,47 +1,45 @@
 ---
 name: sqlalchemy
 description: |
-  SQLAlchemy 2.0 async 인프라 패턴 레퍼런스.
-  Use when: DB 모델 정의, Base 모델 설정, 테이블 매핑, relationship 설정,
-  세션 관리, AsyncSession, sessionmaker, connection pool,
-  쿼리 작성, select, join, subquery, 페이지네이션,
-  Mixin 만들기, TimestampMixin, SoftDeleteMixin,
-  N+1 해결, selectinload, joinedload, expire_on_commit,
-  트랜잭션 관리, nested transaction, savepoint.
-  NOT for: 도메인 엔티티 설계 (domain-layer skill 참조), Alembic 마이그레이션.
+  SQLAlchemy 2.0 async infrastructure pattern reference.
+  Use when: DB model definition, Base model setup, table mapping, relationship config,
+  session management, AsyncSession, sessionmaker, connection pool,
+  query patterns (select, join, subquery, pagination),
+  Mixin (Timestamp, SoftDelete), N+1 prevention (selectinload, joinedload),
+  transaction management, nested transaction, savepoint,
+  generic repository pattern, BaseRepository[ModelType].
+  NOT for: domain entity design (domain-layer skill), Alembic migrations.
 ---
 
-# SQLAlchemy 2.0 Async 스킬
+# SQLAlchemy 2.0 Async Skill
 
-## Base 모델 설정
+## Base Model
 
 ```python
-from datetime import datetime
-from sqlalchemy import String, func
+from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, registry
 
 class Base(DeclarativeBase):
     registry = registry(
-        type_annotation_map={
-            str: String(255),  # default string length
-        }
+        type_annotation_map={str: String(255)}
     )
 ```
 
-## Mixin
+## Mixins
 
 ```python
-from sqlalchemy import Boolean, DateTime, Integer, text
+from datetime import datetime
+from sqlalchemy import Boolean, DateTime, Integer, func
 
 class IdMixin:
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
     )
 
 class SoftDeleteMixin:
@@ -52,13 +50,13 @@ class SoftDeleteMixin:
         self.deleted_at = func.now()
         self.is_active = False
 
-
 # Usage: class UserModel(IdMixin, TimestampMixin, SoftDeleteMixin, Base): ...
 ```
 
-## 세션 관리
+## Session Management
 
 ```python
+from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 engine = create_async_engine(
@@ -71,9 +69,7 @@ engine = create_async_engine(
 )
 
 async_session_factory = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,  # critical: prevents lazy-load after commit
+    engine, class_=AsyncSession, expire_on_commit=False,
 )
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -86,39 +82,43 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 ```
 
-## 커넥션 풀 설정
+### Connection Pool Settings
 
-```
-pool_size=20          # steady-state connections
-max_overflow=10       # burst capacity (total max = 30)
-pool_pre_ping=True    # detect stale connections before use
-pool_recycle=3600     # recycle connections after 1 hour (avoid DB timeout)
-pool_timeout=30       # wait max 30s for available connection
-```
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| `pool_size` | 20 | steady-state connections |
+| `max_overflow` | 10 | burst capacity (total max = 30) |
+| `pool_pre_ping` | True | detect stale connections |
+| `pool_recycle` | 3600 | avoid DB timeout |
+| `pool_timeout` | 30 | max wait for available connection |
 
-## 관계 패턴
+## Relationship Patterns
 
-### 일대다
+**MUST use `lazy="raise"` on ALL relationships.** This prevents N+1 queries at attribute-access time by raising `InvalidRequestError` if a relationship is accessed without explicit eager loading. Unlike `lazy="noload"` (which silently returns empty), `lazy="raise"` fails loudly -- forcing developers to declare loading strategy in every query.
+
+### Checklist
+
+- [ ] Every `relationship()` MUST have `lazy="raise"`
+- [ ] Every query accessing related data MUST use explicit `selectinload` / `joinedload`
+- [ ] Never rely on implicit lazy loading in async context
+
+### One-to-Many
 
 ```python
 class UserModel(IdMixin, TimestampMixin, Base):
     __tablename__ = "users"
-
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(100))
-
-    posts: Mapped[list["PostModel"]] = relationship(back_populates="author", lazy="noload")
+    posts: Mapped[list["PostModel"]] = relationship(back_populates="author", lazy="raise")
 
 class PostModel(IdMixin, TimestampMixin, Base):
     __tablename__ = "posts"
-
     title: Mapped[str] = mapped_column(String(200))
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-
-    author: Mapped["UserModel"] = relationship(back_populates="posts", lazy="noload")
+    author: Mapped["UserModel"] = relationship(back_populates="posts", lazy="raise")
 ```
 
-### 다대다 (연관 테이블)
+### Many-to-Many (Association Table)
 
 ```python
 post_tags = Table(
@@ -129,27 +129,28 @@ post_tags = Table(
 
 class PostModel(IdMixin, Base):
     __tablename__ = "posts"
-    tags: Mapped[list["TagModel"]] = relationship(secondary=post_tags, back_populates="posts", lazy="noload")
+    tags: Mapped[list["TagModel"]] = relationship(
+        secondary=post_tags, back_populates="posts", lazy="raise",
+    )
 
 class TagModel(IdMixin, Base):
     __tablename__ = "tags"
     name: Mapped[str] = mapped_column(String(50), unique=True)
-    posts: Mapped[list["PostModel"]] = relationship(secondary=post_tags, back_populates="tags", lazy="noload")
+    posts: Mapped[list["PostModel"]] = relationship(
+        secondary=post_tags, back_populates="tags", lazy="raise",
+    )
 ```
 
-## 쿼리 패턴
+## Query Patterns
 
-### 기본 조회
+### Basic Select
 
 ```python
-from sqlalchemy import select
-
 stmt = select(UserModel).where(UserModel.email == email)
-result = await db.execute(stmt)
-user = result.scalar_one_or_none()
+user = (await db.execute(stmt)).scalar_one_or_none()
 ```
 
-### Join 쿼리
+### Join Query
 
 ```python
 stmt = (
@@ -158,10 +159,10 @@ stmt = (
     .where(UserModel.is_active == True)
     .order_by(PostModel.created_at.desc())
 )
-rows = (await db.execute(stmt)).all()  # list[Row(PostModel, str)]
+rows = (await db.execute(stmt)).all()
 ```
 
-### 페이지네이션 (Offset/Limit)
+### Offset/Limit Pagination
 
 ```python
 stmt = (
@@ -177,80 +178,133 @@ count_stmt = select(func.count()).select_from(PostModel).where(PostModel.is_acti
 total = (await db.execute(count_stmt)).scalar_one()
 ```
 
-### Eager Loading (N+1 방지)
+### Eager Loading (N+1 Prevention)
+
+With `lazy="raise"`, accessing an unloaded relationship raises an error. MUST use explicit loading:
 
 ```python
 from sqlalchemy.orm import selectinload, joinedload
 
-# selectinload: separate IN query (preferred for collections)
+# selectinload: separate IN query -- preferred for collections
 stmt = select(UserModel).options(selectinload(UserModel.posts)).where(UserModel.id == user_id)
 
-# joinedload: single JOIN (preferred for single relations)
+# joinedload: single JOIN -- preferred for single/scalar relations
 stmt = select(PostModel).options(joinedload(PostModel.author)).where(PostModel.id == post_id)
 
 # nested eager loading
 stmt = select(UserModel).options(
-    selectinload(UserModel.posts).selectinload(PostModel.tags)
+    selectinload(UserModel.posts).selectinload(PostModel.tags),
 )
 ```
 
-### Exists 서브쿼리
+### Exists Subquery
 
 ```python
-from sqlalchemy import exists
-
-has_posts = (
-    exists()
-    .where(PostModel.author_id == UserModel.id)
-    .where(PostModel.is_active == True)
-)
+has_posts = exists().where(PostModel.author_id == UserModel.id, PostModel.is_active == True)
 stmt = select(UserModel).where(has_posts)
 active_authors = (await db.execute(stmt)).scalars().all()
 ```
 
-## Repository 구현
+## BaseRepository[ModelType] Generic
 
-도메인 레이어의 Protocol을 구현합니다 (Adapter 패턴).
+Generic CRUD repository that eliminates boilerplate. Concrete repositories inherit and add domain-specific queries.
 
 ```python
-from app.users.domain.repositories import UserRepository  # Protocol
+from typing import Generic, TypeVar
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-class SqlAlchemyUserRepository:
-    """Implements UserRepository Protocol defined in domain layer."""
+ModelType = TypeVar("ModelType", bound=Base)
+
+class BaseRepository(Generic[ModelType]):
+    """Generic async CRUD repository."""
+
+    model_class: type[ModelType]
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
+    async def get_by_id(self, id: int) -> ModelType | None:
+        return await self.db.get(self.model_class, id)
+
+    async def get_many(
+        self, *, offset: int = 0, limit: int = 100,
+    ) -> list[ModelType]:
+        stmt = select(self.model_class).offset(offset).limit(limit)
+        return list((await self.db.execute(stmt)).scalars().all())
+
+    async def create(self, model: ModelType) -> ModelType:
+        self.db.add(model)
+        await self.db.flush()
+        return model
+
+    async def update(self, model: ModelType, **attrs: object) -> ModelType:
+        for key, value in attrs.items():
+            setattr(model, key, value)
+        await self.db.flush()
+        return model
+
+    async def delete(self, model: ModelType) -> None:
+        await self.db.delete(model)
+        await self.db.flush()
+```
+
+### Concrete Repository Example
+
+Domain layer defines the Protocol; infrastructure implements via BaseRepository.
+
+```python
+# domain/repositories.py (Protocol -- no SQLAlchemy imports)
+from typing import Protocol
+
+class UserRepository(Protocol):
+    async def find_by_id(self, user_id: int) -> UserEntity | None: ...
+    async def find_by_email(self, email: str) -> UserEntity | None: ...
+    async def save(self, entity: UserEntity) -> UserEntity: ...
+
+# infrastructure/repositories/user_repository.py
+class SqlAlchemyUserRepository(BaseRepository[UserModel]):
+    model_class = UserModel
+
     async def find_by_id(self, user_id: int) -> UserEntity | None:
-        stmt = select(UserModel).where(UserModel.id == user_id)
+        model = await self.get_by_id(user_id)
+        return self._to_entity(model) if model else None
+
+    async def find_by_email(self, email: str) -> UserEntity | None:
+        stmt = select(UserModel).where(UserModel.email == email)
         model = (await self.db.execute(stmt)).scalar_one_or_none()
         return self._to_entity(model) if model else None
 
     async def save(self, entity: UserEntity) -> UserEntity:
         if entity.id is None:
-            model = self._to_model(entity)
-            self.db.add(model)
-            await self.db.flush()  # get generated id
-            return self._to_entity(model)
+            model = await self.create(self._to_model(entity))
         else:
-            stmt = select(UserModel).where(UserModel.id == entity.id)
-            model = (await self.db.execute(stmt)).scalar_one()
-            self._update_model(model, entity)
+            model = await self.get_by_id(entity.id)
+            assert model is not None
+            self._apply_changes(model, entity)
             await self.db.flush()
-            return self._to_entity(model)
+        return self._to_entity(model)
 
     def _to_entity(self, model: UserModel) -> UserEntity:
-        return UserEntity(id=model.id, email=Email(model.email), name=model.name, ...)
+        return UserEntity(id=model.id, email=Email(model.email), name=model.name)
 
     def _to_model(self, entity: UserEntity) -> UserModel:
-        return UserModel(email=entity.email.value, name=entity.name, ...)
+        return UserModel(email=entity.email.value, name=entity.name)
 
-    def _update_model(self, model: UserModel, entity: UserEntity) -> None:
+    def _apply_changes(self, model: UserModel, entity: UserEntity) -> None:
         model.email = entity.email.value
         model.name = entity.name
 ```
 
-## 트랜잭션 패턴
+### BaseRepository Checklist
+
+- [ ] `model_class` MUST be set on every concrete repository
+- [ ] Domain Protocol in `domain/` -- zero SQLAlchemy imports
+- [ ] Concrete repository in `infrastructure/` -- implements Protocol
+- [ ] Entity-Model mapping methods (`_to_entity`, `_to_model`) MUST be in repository
+- [ ] Use `flush()` not `commit()` -- commit at service/use-case boundary
+
+## Transaction Patterns
 
 ### Unit of Work (Application Service)
 
@@ -267,17 +321,28 @@ class OrderApplicationService:
         return saved.id
 ```
 
-### 중첩 트랜잭션 (Savepoint)
+### Nested Transaction (Savepoint)
 
 ```python
-async def transfer_with_savepoint(self, from_id: int, to_id: int, amount: Money) -> None:
-    async with self.db.begin_nested() as savepoint:  # SAVEPOINT
-        from_account = await self.account_repo.find_by_id(from_id)
-        to_account = await self.account_repo.find_by_id(to_id)
-        from_account.withdraw(amount)
-        to_account.deposit(amount)
-        await self.account_repo.save(from_account)
-        await self.account_repo.save(to_account)
-        # savepoint auto-commits on exit, or rollback on exception
+async def transfer(self, from_id: int, to_id: int, amount: Money) -> None:
+    async with self.db.begin_nested():  # SAVEPOINT
+        from_acc = await self.account_repo.find_by_id(from_id)
+        to_acc = await self.account_repo.find_by_id(to_id)
+        from_acc.withdraw(amount)
+        to_acc.deposit(amount)
+        await self.account_repo.save(from_acc)
+        await self.account_repo.save(to_acc)
     await self.db.commit()  # outer commit
 ```
+
+## Quick Reference
+
+| Rule | Detail |
+|------|--------|
+| `lazy="raise"` | MUST on all relationships |
+| `expire_on_commit=False` | MUST on async sessionmaker |
+| `selectinload` | collections (one-to-many, many-to-many) |
+| `joinedload` | scalar relations (many-to-one) |
+| `flush()` in repository | `commit()` in application service |
+| `BaseRepository[ModelType]` | inherit for CRUD, extend for domain queries |
+| `pool_pre_ping=True` | MUST for production |

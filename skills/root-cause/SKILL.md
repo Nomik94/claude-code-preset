@@ -17,7 +17,7 @@ argument-hint: <증상 또는 에러 메시지>
 Task tool로 `root-cause-analyst` 에이전트를 스폰하세요.
 
 **프롬프트에 반드시 포함**:
-- `CONTEXT: WORKER agent. STACK: Python 3.12+/FastAPI/SQLAlchemy 2.0/Poetry`
+- `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlchemy 2.0/Poetry`
 - `agents/root-cause-analyst.md`의 전체 내용
 - 증상/에러 정보: $ARGUMENTS
 

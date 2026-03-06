@@ -18,14 +18,14 @@ argument-hint: <설계/구현 대상>
 Task tool로 `engineer` 에이전트를 스폰하세요.
 
 **프롬프트에 반드시 포함**:
-- `CONTEXT: WORKER agent. STACK: Python 3.12+/FastAPI/SQLAlchemy 2.0/Poetry`
+- `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlchemy 2.0/Poetry`
 - `agents/engineer.md`의 전체 내용
 - 사용자의 구체적 요청 사항: $ARGUMENTS
 
 ## 에이전트 역할
 
 - **설계**: API 스펙, DB 스키마, 시스템 아키텍처, DDD
-- **구현**: SOLID, 클린 아키텍처, TDD, Python 3.12+
+- **구현**: SOLID, 클린 아키텍처, TDD, Python 3.13+
 - **성능**: N+1 방지, 캐싱, 프로파일링, 벤치마킹
 - **보안**: JWT, RBAC, OWASP Top 10, 입력 검증
 - **테스트**: 테스트 피라미드, 커버리지, 엣지 케이스

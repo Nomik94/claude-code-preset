@@ -28,6 +28,8 @@ description: |
 - [ ] 인증 및 공개 엔드포인트에 Rate Limiting 적용
 - [ ] JWT 시크릿 키를 환경변수에서 가져오며, 최소 256비트
 - [ ] JWT 토큰 만료 설정 (access: 15-30분, refresh: 7-14일)
+- [ ] Refresh Token Rotation 적용 (일회용 refresh token + Redis 블랙리스트)
+- [ ] PyJWT 사용 (python-jose 아님)
 - [ ] `pip-audit` 또는 `safety check`에서 알려진 취약점 없음
 - [ ] 비밀번호 해싱에 bcrypt/argon2와 적절한 work factor 사용
 - [ ] SQL 인젝션 방지 (파라미터화된 쿼리 / ORM만 사용)
@@ -45,7 +47,7 @@ description: |
 
 ## 4. 성능
 
-- [ ] N+1 쿼리 해결 (`selectinload` / `joinedload` 사용)
+- [ ] N+1 쿼리 해결 (lazy="raise" 기본 + `selectinload` / `joinedload` 명시)
 - [ ] 핫 경로에 Redis 캐싱 설정 완료
 - [ ] 느린 쿼리 로깅 활성화 (임계값: 200ms)
 - [ ] 모든 목록 엔드포인트에 페이지네이션 적용 (최대 페이지 크기 제한)
@@ -70,7 +72,7 @@ description: |
 - [ ] OpenAPI 문서 정확하고 접근 가능: `/docs`, `/redoc`
 - [ ] 모든 에러 응답이 일관된 스키마 준수 (`code`, `message`, `details`)
 - [ ] 모든 목록 엔드포인트에 `limit`/`offset` 또는 커서 페이지네이션
-- [ ] API 버저닝 적용: `/api/v1/...`
+- [ ] API 버저닝 적용: `/{client}/v{version}/{domain}/{action}` (EndpointPath)
 - [ ] OpenAPI 스키마에 요청/응답 예시 포함
 - [ ] `Content-Type` 및 `Accept` 헤더 검증
 - [ ] 적절한 HTTP 상태 코드 (생성 시 201, 삭제 시 204)

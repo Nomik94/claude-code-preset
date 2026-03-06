@@ -48,6 +48,10 @@ severity: error | warning | info
 | 커밋에 TODO/FIXME 금지 | warning | 스테이징된 파일의 미해결 마커 |
 | 와일드카드 import 금지 | warning | Python의 `from module import *` |
 | .env 파일 커밋 금지 | error | git에 포함된 `.env`, `.env.local` |
+| Folder-first 위반 | error | router.py 단일 파일 (controllers/ 폴더 필수) |
+| lazy="raise" 누락 | warning | relationship에 lazy="raise" 미적용 |
+| python-jose import | error | PyJWT 사용 필수 (`import jwt`) |
+| Conventional Commits | warning | 커밋 메시지가 `feat:`, `fix:` 등으로 시작하지 않음 |
 
 ## 규칙 관리
 

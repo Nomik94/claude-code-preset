@@ -27,13 +27,18 @@ poetry run pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 
 ### 5. 보안
 poetry run ruff check --select S .
+poetry run pip-audit
 
 ### 6. 의존성
 poetry check && poetry lock --check
 
+### 7. 추가 품질
+poetry run vulture app/ --min-confidence 80
+poetry run deptry .
+
 ## 통과 기준
-- 6단계 모두 통과 -> "검증 완료. 커밋 가능."
+- 7단계 모두 통과 -> "검증 완료. 커밋 가능."
 - 하나라도 실패 -> "검증 실패: [실패 항목]. 수정 필요."
 
 ## 출력 형식
-"Verify: 6/6 passed" or "Verify: 4/6 passed -- [failing steps]"
+"Verify: 7/7 passed" or "Verify: 5/7 passed -- [failing steps]"

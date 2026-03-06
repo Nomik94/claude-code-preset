@@ -45,7 +45,7 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 
 | 카테고리 | 비중 | 검증 대상 |
 |---------|------|----------|
-| Type Hints | 25% | 함수 파라미터/반환 타입 명시, Python 3.12+ 문법, Protocol/TypedDict 활용 |
+| Type Hints | 25% | 함수 파라미터/반환 타입 명시, Python 3.13+ 문법, Protocol/TypedDict 활용 |
 | Code Quality | 25% | Ruff 규칙 준수, 복잡도 ≤10, 네이밍 컨벤션 |
 | Testing | 20% | 커버리지 ≥80%, 도메인 유닛 테스트, 엣지 케이스 커버 |
 | Security | 15% | SQL Injection 방지, 하드코딩 시크릿 없음, 입력 검증, 민감 정보 로깅 방지 |
@@ -53,14 +53,17 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 
 ## 코드 스멜 카탈로그
 
-### 아키텍처 스멜
-| 스멜 | 증상 | 개선 |
-|------|------|------|
-| 레이어 위반 | domain/에서 SQLAlchemy import | 도메인 순수성 유지, Protocol 분리 |
-| Fat Controller | Router에 비즈니스 로직 50줄+ | Service 레이어로 추출 |
-| God Service | Service 하나에 메서드 15개+ | 도메인별 Service 분리 |
-| Anemic Domain | Entity에 getter/setter만 | 비즈니스 메서드를 Entity로 이동 |
-| Circular Dependency | A→B→A import | 인터페이스(Protocol) 도입 |
+### 아키텍처 스멜 (SOLID 위반 감지)
+| 스멜 | 증상 | SOLID 위반 | 개선 |
+|------|------|-----------|------|
+| 레이어 위반 | domain/에서 SQLAlchemy import | DIP | 도메인 순수성 유지, Protocol 분리 |
+| Fat Controller | Controller에 비즈니스 로직 50줄+ | SRP | Service 레이어로 추출 |
+| God Service | Service 하나에 메서드 15개+ | SRP | 도메인별 Service 분리 |
+| Anemic Domain | Entity에 getter/setter만, Service에 규칙 분산 | SRP, OCP | Rich Domain Model: 비즈니스 메서드를 Entity로 이동 |
+| Circular Dependency | A→B→A import | DIP | 인터페이스(Protocol) 도입 |
+| 범용 Repository | 모든 도메인이 하나의 거대 인터페이스 사용 | ISP | 도메인별 Repository Protocol 분리 |
+| 구현체 계약 위반 | Protocol 메서드 누락/반환 타입 불일치 | LSP | 구체 Repository가 Protocol 계약 100% 구현 |
+| mappings.py 우회 | 핸들러에서 예외→HTTP 매핑 직접 하드코딩 | OCP | mappings.py에 1줄 추가로 대응 |
 
 ### 코드 레벨 스멜
 | 스멜 | 증상 | 개선 |
@@ -103,17 +106,25 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 | 5순위 | 코드 스타일 | 유지보수성 |
 
 ## FastAPI 리뷰 체크리스트
-- [ ] domain/에 framework import 없음
-- [ ] Repository는 Protocol로 정의
+- [ ] controllers/ 폴더 구조 (router.py 아님)
+- [ ] dto/ 폴더 구조 (엔드포인트 1:1 매핑)
+- [ ] domain/에 framework import 없음 (DIP)
+- [ ] Repository는 도메인별 Protocol로 정의 (DIP, ISP)
+- [ ] 구체 Repository가 Protocol 계약을 100% 구현 (LSP)
 - [ ] EndpointPath 헬퍼로 경로 정의
-- [ ] 파라미터 클래스 + Depends() 사용 (핸들러에 Query/Path 직접 나열 금지, 참조: `api-design` skill)
+- [ ] 파라미터 클래스 + Depends() 사용 (핸들러에 Query/Path 직접 나열 금지)
 - [ ] Pydantic 스키마로 입력 검증
-- [ ] 도메인 예외가 HTTP 코드를 모름
+- [ ] 도메인 예외가 HTTP 코드를 모름 (mappings.py에서 매핑, OCP)
+- [ ] Entity가 Rich Domain Model (비즈니스 메서드 보유, Anemic 아님)
+- [ ] Service에 Entity 상태 판단 로직이 분산되지 않음 (SRP)
 - [ ] 도메인 유닛 테스트 DB 없이 검증
 - [ ] expire_on_commit=False 설정
+- [ ] relationship lazy="raise" 기본
 - [ ] selectinload()로 N+1 방지
 - [ ] async 함수 내 동기 blocking 호출 없음
 - [ ] 에러 응답에 내부 구현 노출 없음
+- [ ] PyJWT 사용 (python-jose 아님)
+- [ ] Conventional Commits 형식
 
 ## 출력 형식
 ```

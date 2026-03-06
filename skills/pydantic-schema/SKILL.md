@@ -1,73 +1,106 @@
 ---
 name: pydantic-schema
 description: |
-  Pydantic v2 스키마 패턴 레퍼런스.
-  Use when: 요청/응답 스키마, Request DTO, Response DTO, 스키마 설계,
+  Pydantic v2 DTO/스키마 설계 패턴.
+  Use when: 요청/응답 DTO, CamelModel, dto/ 폴더 구조,
   camelCase 변환, alias_generator, model_config, 검증 로직,
-  커스텀 validator, field_validator, model_validator,
-  중첩 스키마, 페이지네이션 응답, 에러 응답 포맷,
-  Pydantic BaseModel 설정, JSON 직렬화, 역직렬화.
-  NOT for: 도메인 엔티티 (domain-layer 참조), DB 모델 (sqlalchemy 참조).
+  field_validator, model_validator, partial update (apply_simple_fields),
+  페이지네이션 응답, 에러 응답 (ErrorBody), from_domain 팩토리,
+  Pydantic BaseModel 설정, JSON 직렬화.
+  NOT for: 도메인 엔티티 (domain-layer), DB 모델 (sqlalchemy).
 ---
 
-# Pydantic v2 스키마 패턴
+# Pydantic v2 DTO 패턴
 
-## Base 스키마 설정
+## CamelModel (Base DTO)
+
+모든 DTO가 상속하는 기반 클래스. 이름은 반드시 `CamelModel`.
 
 ```python
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-class BaseSchema(BaseModel):
-    """All DTOs inherit this. JSON uses camelCase, Python uses snake_case."""
+class CamelModel(BaseModel):
     model_config = ConfigDict(
-        from_attributes=True,       # ORM model -> schema
-        populate_by_name=True,      # accept both camelCase and snake_case
-        alias_generator=to_camel,   # snake_case -> camelCase in JSON
+        from_attributes=True,
+        populate_by_name=True,
+        alias_generator=to_camel,
     )
 ```
 
-## 스키마 상속 패턴
+- MUST: `CamelModel` 명칭 사용 (BaseSchema 금지)
+- MUST: 모든 DTO는 CamelModel 상속
+- MUST: `from_attributes=True` (ORM 변환용)
+
+## dto/ 폴더 구조
+
+dto/는 처음부터 폴더로 생성. endpoint 1:1 파일 매핑.
+
+```
+src/{domain}/dto/
+  __init__.py          # re-export all DTOs
+  create_user.py       # CreateUserRequest, CreateUserResponse
+  update_user.py       # UpdateUserRequest
+  list_users.py        # ListUsersRequest (query params), UserListItem
+  get_user.py          # UserDetailResponse
+  common.py            # shared nested schemas (AddressResponse, etc.)
+```
+
+- MUST: endpoint당 1개 파일 (create_user.py, list_users.py ...)
+- MUST: 단일 dto.py 금지 -- 반드시 폴더 구조
+- MUST: `__init__.py`에서 re-export
+
+## Request/Response 패턴
 
 ```python
-class UserBase(BaseSchema):
-    """Shared fields across Create/Update/Response."""
+# dto/create_user.py
+class CreateUserRequest(CamelModel):
     email: str
     name: str
-
-class CreateUserRequest(UserBase):
-    """Fields required only on creation."""
     password: str
     password_confirm: str
 
-class UpdateUserRequest(BaseSchema):
-    """All Optional for partial update (PATCH)."""
+# dto/update_user.py -- partial update
+class UpdateUserRequest(CamelModel):
     email: str | None = None
     name: str | None = None
     phone: str | None = None
 
-class UserResponse(UserBase):
-    """Response with DB-generated fields."""
+# dto/get_user.py
+class UserDetailResponse(CamelModel):
     id: int
-    role: "UserRole"
+    email: str
+    name: str
+    role: UserRole
     is_active: bool
     created_at: datetime
 ```
 
-## 페이지네이션 패턴
+## apply_simple_fields() -- Partial Update
+
+PATCH 엔드포인트에서 `model_fields_set`을 수동 순회하지 않고 헬퍼 메서드 사용.
 
 ```python
-from collections.abc import Sequence
-from typing import Generic, TypeVar
-from pydantic import BaseModel, ConfigDict, computed_field
-from pydantic.alias_generators import to_camel
+class UpdateUserRequest(CamelModel):
+    email: str | None = None
+    name: str | None = None
+    phone: str | None = None
 
+    def apply_simple_fields(self, entity: UserEntity) -> None:
+        for field_name in self.model_fields_set:
+            setattr(entity, field_name, getattr(self, field_name))
+```
+
+- MUST: partial update 시 `apply_simple_fields()` 패턴 사용
+- MUST: `model_fields_set` 직접 순회 코드를 서비스 레이어에 노출하지 않음
+- 복잡한 필드(비밀번호 해싱 등)는 `apply_simple_fields()` 외부에서 별도 처리
+
+## 페이지네이션
+
+```python
 T = TypeVar("T", bound=BaseModel)
 
-class PaginatedResponse(BaseModel, Generic[T]):
-    """Generic pagination wrapper. Usage: PaginatedResponse[UserResponse]"""
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
+class PaginatedResponse(CamelModel, Generic[T]):
     items: Sequence[T]
     total: int
     page: int
@@ -82,56 +115,44 @@ class PaginatedResponse(BaseModel, Generic[T]):
     @property
     def has_next(self) -> bool:
         return self.page < self.total_pages
-
-# Router usage:
-# @router.get("", response_model=PaginatedResponse[UserResponse])
 ```
 
-## 에러 응답 형식
+Usage: `PaginatedResponse[UserListItem]`
+
+## ErrorBody
+
+통일된 에러 응답 구조. 이름은 반드시 `ErrorBody` + `FieldError`.
 
 ```python
-class ErrorDetail(BaseSchema):
-    field: str | None = None
+class FieldError(CamelModel):
+    field: str
     message: str
 
-class ErrorResponse(BaseSchema):
-    """Consistent error format across all endpoints."""
-    code: str          # e.g. "VALIDATION_ERROR", "NOT_FOUND"
-    message: str       # human-readable
-    details: list[ErrorDetail] = []
-
-# 422 override example in exception handler:
-# {"code": "VALIDATION_ERROR", "message": "Invalid input", "details": [...]}
+class ErrorBody(CamelModel):
+    code: str              # "VALIDATION_ERROR", "NOT_FOUND", "CONFLICT"
+    message: str           # human-readable summary
+    errors: list[FieldError] = []
 ```
 
-## 검증기
+- MUST: `ErrorBody` 명칭 사용 (ErrorResponse, ErrorDetail 금지)
+- MUST: 필드 에러는 `FieldError` (field + message)
+- MUST: `errors` 필드명 사용 (details 금지)
+- 422 override 시 `errors`에 각 필드별 FieldError 매핑
+
+## Validators
 
 ```python
-import re
-from pydantic import field_validator, model_validator
-
-class CreateUserRequest(UserBase):
+class CreateUserRequest(CamelModel):
+    email: str
     password: str
     password_confirm: str
 
     @field_validator("email")
     @classmethod
     def validate_email_format(cls, v: str) -> str:
-        pattern = r"^[\w.+-]+@[\w-]+\.[\w.]+$"
-        if not re.match(pattern, v):
+        if not re.match(r"^[\w.+-]+@[\w-]+\.[\w.]+$", v):
             raise ValueError("Invalid email format")
         return v.lower().strip()
-
-    @field_validator("password")
-    @classmethod
-    def validate_password_strength(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain uppercase letter")
-        if not re.search(r"\d", v):
-            raise ValueError("Password must contain a digit")
-        return v
 
     @model_validator(mode="after")
     def validate_passwords_match(self) -> Self:
@@ -140,83 +161,61 @@ class CreateUserRequest(UserBase):
         return self
 ```
 
+- MUST: `field_validator` / `model_validator` 사용 (`@validator` 금지)
+- MUST: `model_validator(mode="after")` 반환 타입은 `Self`
+
 ## Enum 통합
 
 ```python
-from enum import StrEnum
-
 class UserRole(StrEnum):
     ADMIN = "admin"
     MEMBER = "member"
     GUEST = "guest"
 
-class UserResponse(UserBase):
-    id: int
-    role: UserRole          # serializes to "admin", "member", etc.
-    is_active: bool
-    created_at: datetime
-
-# Request with enum constraint:
-class UpdateRoleRequest(BaseSchema):
-    role: UserRole          # auto-validates against enum values
-```
-
-## 직렬화
-
-```python
-# Schema -> JSON dict (camelCase keys, no None values)
-user = UserResponse.model_validate(orm_user)
-json_dict = user.model_dump(by_alias=True, exclude_none=True)
-# {"id": 1, "email": "a@b.com", "name": "Kim", "role": "admin", "isActive": true, "createdAt": "..."}
-
-# JSON string
-json_str = user.model_dump_json(by_alias=True, exclude_none=True)
-
-# From dict/JSON (accepts both camelCase and snake_case)
-user = UserResponse.model_validate({"id": 1, "email": "a@b.com", "name": "Kim", ...})
-
-# From ORM model (requires from_attributes=True)
-user = UserResponse.model_validate(db_user)
-
-# Batch conversion
-users = [UserResponse.model_validate(u) for u in db_users]
-```
-
-## 중첩 스키마
-
-```python
-class AddressResponse(BaseSchema):
-    city: str
-    street: str
-    zip_code: str
-
-class UserDetailResponse(UserResponse):
-    """Extended response with nested relations."""
-    addresses: list[AddressResponse] = []
-    department: "DepartmentResponse | None" = None
-
-# ORM model with relationships -> nested schema automatically
-# requires from_attributes=True and eager/joined load on query
+class UserDetailResponse(CamelModel):
+    role: UserRole  # auto-validates, serializes to string
 ```
 
 ## from_domain 팩토리
 
+ORM `from_attributes` 대신 도메인 엔티티에서 직접 변환할 때 사용.
+
 ```python
-class UserResponse(UserBase):
+class UserDetailResponse(CamelModel):
     id: int
-    role: UserRole
-    is_active: bool
-    created_at: datetime
+    email: str
+    name: str
 
     @classmethod
     def from_domain(cls, entity: "UserEntity") -> Self:
-        """Domain entity -> Response DTO (when not using ORM mode)."""
         return cls(
             id=entity.id,
             email=entity.email.value,  # unwrap value objects
             name=entity.name,
-            role=UserRole(entity.role.value),
-            is_active=entity.is_active,
-            created_at=entity.created_at,
         )
 ```
+
+- MUST: 반환 타입 `Self` (`-> "ClassName"` 금지)
+- from_domain은 Response DTO에만 정의
+
+## 직렬화 Quick Reference
+
+| Operation | Code |
+|-----------|------|
+| ORM -> DTO | `UserDetailResponse.model_validate(db_user)` |
+| Entity -> DTO | `UserDetailResponse.from_domain(entity)` |
+| DTO -> dict (camel) | `dto.model_dump(by_alias=True, exclude_none=True)` |
+| DTO -> JSON string | `dto.model_dump_json(by_alias=True)` |
+| Batch convert | `[UserListItem.model_validate(u) for u in db_users]` |
+
+## Checklist
+
+- [ ] CamelModel을 base로 사용 (BaseSchema 아님)
+- [ ] dto/ 폴더 구조, endpoint 1:1 파일
+- [ ] `__init__.py`에서 모든 DTO re-export
+- [ ] Partial update는 `apply_simple_fields()` 패턴
+- [ ] 에러 응답은 ErrorBody + FieldError
+- [ ] Python 3.13+ 문법: `X | None`, `list[X]`, `StrEnum`
+- [ ] Pydantic v2: `model_config`, `model_dump()`, `model_validate()`
+- [ ] from_domain 반환 타입 `Self`
+- [ ] 도메인 엔티티에 Pydantic import 없음
