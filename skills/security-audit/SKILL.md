@@ -141,23 +141,19 @@ raise HTTPException(status_code=403, detail="...")
 
 ### mappings.py 패턴
 
-도메인 예외 -> HTTP 상태코드 매핑은 **한 곳**에서 관리:
+도메인 예외 → HTTP 매핑은 `core/exceptions/mappings.py`의 dict 한 곳에서 관리:
 
 ```python
-# core/exceptions/mappings.py (글로벌 매핑 — 원본 위치)
-EXCEPTION_STATUS_MAP: dict[type[DomainException], int] = {
+# core/exceptions/mappings.py
+DOMAIN_EXCEPTION_MAPPINGS: dict[type[Exception], int] = {
     UnauthorizedException: 401,
     ForbiddenException: 403,
-    EntityNotFoundException: 404,
-    DuplicateEntityException: 409,
-    BusinessRuleViolation: 422,
+    # ... 다른 도메인 예외 (전체 구조는 /error-handling 참조)
 }
 ```
 
-- **글로벌 매핑**: `core/exceptions/mappings.py` (원본, 필수)
-- **도메인별 매핑**: `{domain}/exceptions/mappings.py` (선택적, 도메인 고유 예외용)
-- 글로벌 핸들러가 이 매핑을 참조하여 HTTP 응답 생성
-- 새 예외 추가 시 mappings.py에 등록 필수
+- 새 보안 예외 추가 시 mappings.py에 1줄 추가. 핸들러 수정 금지.
+- 매핑에 없는 예외는 500으로 처리됨.
 
 ## 7. 패스워드 해싱 (Value Object)
 

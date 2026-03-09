@@ -210,21 +210,13 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 ## 스케줄링
 
-```python
-# APScheduler — periodic
-scheduler = AsyncIOScheduler()
-scheduler.add_job(cleanup_expired_tokens, CronTrigger(hour=3), id="cleanup")
-scheduler.add_job(sync_external_data, IntervalTrigger(minutes=30), id="sync")
+상세 패턴은 `/background-tasks` 참조. Celery task는 ddtrace가 자동 계측.
 
-# BackgroundTasks — one-off
-background_tasks.add_task(send_welcome_email, user.email)
-
-# Celery — heavy async (ddtrace 자동 계측)
-@celery.task(bind=True, max_retries=3)
-def generate_report(self, report_id: int):
-    try: ...
-    except Exception as exc: self.retry(exc=exc, countdown=60)
-```
+| 도구 | 용도 | 선택 기준 |
+|------|------|----------|
+| BackgroundTasks | 일회성 경량 작업 | 이메일, 로깅 |
+| APScheduler | 주기적 작업 | 크론잡 |
+| Celery | 무거운 분산 작업 | 리포트, ETL |
 
 ## 캐싱
 

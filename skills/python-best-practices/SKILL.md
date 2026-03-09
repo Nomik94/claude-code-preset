@@ -33,15 +33,9 @@ Python 코드의 품질, 타입 안전성, 테스트 커버리지, 린팅 규칙
 - [ ] 함수/클래스 복잡도 적정 수준
 - [ ] Import 정리 및 정렬
 - [ ] Python 3.13+ 최신 문법 (StrEnum, `dataclass(slots=True)` 등)
-- [ ] Pydantic v2 필수 패턴:
-  - `model_config = ConfigDict(...)` (not `class Config:`)
-  - `model_dump()` / `model_validate()` (not `.dict()` / `.parse_obj()`)
-  - `field_validator` / `model_validator` (not `@validator`)
-  - `from_attributes=True` (not `orm_mode = True`)
+- [ ] Pydantic v2 필수: `ConfigDict` (not `class Config`), `model_dump()` (not `.dict()`), `field_validator` (not `@validator`)
 
-**Ruff select 기준**: `E`, `W`, `F`, `I`, `N`, `UP`, `S`, `B`, `A`, `C4`, `DTZ`, `T20`, `ICN`, `PIE`, `PT`, `RSE`, `RET`, `SLF`, `SIM`, `TID`, `ARG`, `ERA`, `PL`, `RUF`, `ANN`, `TID`
-
-**검증**: `poetry run ruff check .` / `poetry run ruff format --check .`
+**검증**: `poetry run ruff check .` / `poetry run ruff format --check .` (Ruff 상세 설정은 `/fastapi` 참조)
 
 ### 3. Testing (15%)
 

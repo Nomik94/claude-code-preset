@@ -251,12 +251,10 @@ class BaseRepository(Generic[ModelType]):
 
 ### Concrete Repository Example
 
-Domain layer defines the Protocol; infrastructure implements via BaseRepository.
+Domain Protocol (domain/) → Infrastructure Adapter (infrastructure/) 패턴:
 
 ```python
 # domain/repositories.py (Protocol -- no SQLAlchemy imports)
-from typing import Protocol
-
 class UserRepository(Protocol):
     async def find_by_id(self, user_id: int) -> UserEntity | None: ...
     async def find_by_email(self, email: str) -> UserEntity | None: ...
@@ -266,34 +264,13 @@ class UserRepository(Protocol):
 class SqlAlchemyUserRepository(BaseRepository[UserModel]):
     model_class = UserModel
 
-    async def find_by_id(self, user_id: int) -> UserEntity | None:
-        model = await self.get_by_id(user_id)
-        return self._to_entity(model) if model else None
-
     async def find_by_email(self, email: str) -> UserEntity | None:
         stmt = select(UserModel).where(UserModel.email == email)
         model = (await self.db.execute(stmt)).scalar_one_or_none()
         return self._to_entity(model) if model else None
 
-    async def save(self, entity: UserEntity) -> UserEntity:
-        if entity.id is None:
-            model = await self.create(self._to_model(entity))
-        else:
-            model = await self.get_by_id(entity.id)
-            assert model is not None
-            self._apply_changes(model, entity)
-            await self.db.flush()
-        return self._to_entity(model)
-
-    def _to_entity(self, model: UserModel) -> UserEntity:
-        return UserEntity(id=model.id, email=Email(model.email), name=model.name)
-
-    def _to_model(self, entity: UserEntity) -> UserModel:
-        return UserModel(email=entity.email.value, name=entity.name)
-
-    def _apply_changes(self, model: UserModel, entity: UserEntity) -> None:
-        model.email = entity.email.value
-        model.name = entity.name
+    # MUST: _to_entity(), _to_model() 변환 메서드 구현
+    # MUST: save()에서 create/update 분기 처리
 ```
 
 ### BaseRepository Checklist

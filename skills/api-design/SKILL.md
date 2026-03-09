@@ -200,13 +200,6 @@ async def list_users(
 ) -> PaginatedResponse[UserResponse]:
     return await service.list_users(params)
 
-@router.get(api("/detail/{user_id}"), response_model=UserResponse)
-async def get_user(
-    path: UserPathParams = Depends(),
-    service: UserService = Depends(get_user_service),
-) -> UserResponse:
-    return await service.get_user(path.user_id)
-
 @router.post(api("/create"), response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     body: CreateUserRequest,
@@ -214,21 +207,8 @@ async def create_user(
 ) -> UserResponse:
     return await service.create_user(body)
 
-@router.patch(api("/update/{user_id}"), response_model=UserResponse)
-async def update_user(
-    path: UserPathParams = Depends(),
-    body: UpdateUserRequest = ...,
-    service: UserService = Depends(get_user_service),
-) -> UserResponse:
-    return await service.update_user(path.user_id, body)
-
-@router.delete(api("/delete/{user_id}"), status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(
-    path: UserPathParams = Depends(),
-    service: UserService = Depends(get_user_service),
-) -> Response:
-    await service.delete_user(path.user_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+# PATCH: path: PathParams = Depends() + body: UpdateRequest
+# DELETE: path: PathParams = Depends() → 204 No Content
 ```
 
 ## 필터링, 정렬, 검색
