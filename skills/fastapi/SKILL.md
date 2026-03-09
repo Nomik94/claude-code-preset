@@ -13,6 +13,8 @@ description: |
 
 # FastAPI 스킬
 
+**Python 3.13+ REQUIRED** — 레거시 타입(`Optional`, `Union`, `List`, `Dict`) 금지. `X | None`, `list[X]` 사용.
+
 ## 프로젝트 구조 (Folder-First)
 
 controllers/, dto/, exceptions/, constants/는 **처음부터 폴더로 생성**. File→Package 진화 없음.
@@ -248,9 +250,14 @@ deptry .                           # 사용하지 않는 의존성 감지
 pip-audit                          # 알려진 취약점 감지
 ```
 
+## SQLAlchemy 관련
+
+MUST: `relationship(lazy="raise")` 기본값 사용 — N+1 컴파일타임 방지. 상세는 `/sqlalchemy` 스킬 참조.
+
 ## 체크리스트
 
 - [ ] controllers/ 폴더로 생성 (router.py 아님)
+- [ ] SQLAlchemy relationship에 `lazy="raise"` 설정
 - [ ] dto/ 폴더로 생성 (엔드포인트 1:1 매핑)
 - [ ] exceptions/ 폴더로 생성 (domain.py 포함)
 - [ ] constants/ 폴더로 생성 (enums.py, messages.py, limits.py)

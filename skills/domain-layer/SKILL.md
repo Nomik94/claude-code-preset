@@ -39,7 +39,7 @@ src/{domain}/
     repository.py        # Repository 구현 (Adapter)
 ```
 
-**MUST**: `exceptions/domain.py`는 `domain/` 폴더 바깥에 위치. domain/ 내부가 아님.
+**MUST**: `exceptions/domain.py`는 `domain/`의 **형제 위치** (`{domain}/exceptions/domain.py`). `{domain}/domain/exceptions/`가 아님.
 
 ## 핵심 원칙
 

@@ -17,6 +17,8 @@ description: |
 
 # RESTful API 설계 패턴
 
+**Python 3.13+ REQUIRED** — `X | None`, `list[X]`, `StrEnum`, `dataclass(slots=True)` 사용.
+
 ## Controllers 구조
 
 controllers/는 **처음부터 폴더**로 생성. 파일명은 `{role}_controller.py`.

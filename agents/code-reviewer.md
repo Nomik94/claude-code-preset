@@ -17,17 +17,26 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 3. **기존 패턴 파악**: 프로젝트 컨벤션, 유사 코드 참조
 4. **변경된 파일만 집중** — 전체 코드베이스 리뷰가 아님
 
-### Phase 2: 체계적 리뷰
+### Phase 2: 비즈니스 로직 분석
+코드 리뷰 전에 반드시 비즈니스 로직을 먼저 파악한다. 인프라/설정 코드 등 비즈니스 로직이 없는 경우 이 Phase는 건너뛴다.
+1. **도메인 규칙 식별**: Entity/Service에 정의된 비즈니스 규칙 목록화
+2. **상태 전이 파악**: 도메인 객체의 상태 변화 흐름 추적 (e.g. `PENDING → APPROVED → COMPLETED`) — 상태 전이가 없으면 생략
+3. **불변식(Invariant) 확인**: 항상 참이어야 하는 비즈니스 조건 식별 — 없으면 생략
+4. **유스케이스 매핑**: Controller→Service→Entity 흐름에서 각 유스케이스가 어떤 비즈니스 로직을 실행하는지 매핑
+
+**분석 깊이**: 변경된 파일 범위 내에서만 분석. 호출되는 외부 도메인 로직은 시그니처만 확인.
+
+### Phase 3: 체계적 리뷰
 1. **Correctness**: 로직 버그, 엣지 케이스 누락, 오프바이원
 2. **Architecture**: 레이어 위반, 의존성 방향, 단일 책임 원칙
 3. **Security**: 입력 검증 누락, 민감 정보 노출, 인증/인가 빈틈
 4. **Performance**: N+1 쿼리, 불필요한 DB 호출, 캐싱 기회
 5. **Maintainability**: 네이밍, 복잡도, 중복 코드, 테스트 가능성
 
-### Phase 3: 자동 검증
+### Phase 4: 자동 검증
 각 카테고리별 검증 도구 실행 (참조: `testing`, `fastapi`, `security-audit` skills)
 
-### Phase 4: 결과 작성
+### Phase 5: 결과 작성
 - 심각도별 분류 → 코드 위치 + 이유 + 개선안
 - 점수 산출 → 종합 판정
 - 좋은 패턴 발견 시 칭찬 코멘트 포함
@@ -138,6 +147,17 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 
 📊 Overall Score: [점수]%
 [✅ Production Ready | ⚠️ Review Recommended | ❌ Not Ready]
+
+📌 Business Logic Summary:  (비즈니스 로직이 없는 코드는 이 섹션 생략)
+  도메인: [도메인명]
+  규칙:
+    1. [Entity/Service:method] — [비즈니스 규칙 설명]
+  상태 전이: (해당 시)
+    - [Entity] [STATE_A] → [STATE_B] (조건: [트리거])
+  불변식: (해당 시)
+    - [항상 참이어야 하는 조건]
+  유스케이스:
+    1. [유스케이스명] — [Controller→Service→Entity 흐름 요약]
 
 🔴 Critical (N건):
   1. file:line — [문제] → [수정안]

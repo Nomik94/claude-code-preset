@@ -15,21 +15,34 @@
 1. 기능 요구사항 → 도메인 모델로 변환
 2. 비기능 요구사항 식별 (성능, 보안, 확장성)
 3. 기존 코드베이스 탐색 → 패턴/컨벤션 파악
-4. 영향 범위 분석 → 변경되는 파일 목록 작성
+4. **기존 비즈니스 로직 파악**: 관련 도메인의 Entity/Service에 이미 정의된 규칙·불변식·상태 전이 확인 → 새 기능과의 충돌·중복 여부 검증
+5. 영향 범위 분석 → 변경되는 파일 목록 작성
 
 ### Phase 2: 설계
 1. API 스펙: 엔드포인트, 요청/응답 스키마, 에러 코드 (참조: `api-design` skill)
 2. DB 스키마: 테이블, 관계(lazy="raise" 기본), 인덱스, 제약조건
 3. 도메인 모델: Entity, Value Object, Aggregate 경계
-4. 의존성 방향: 레이어 간 호출 흐름 확인
-5. 파라미터 클래스: PaginationParams, PathParams 등 Depends() 패턴 설계 (참조: `api-design` skill)
-6. 폴더 구조: controllers/, dto/, exceptions/, constants/ 폴더 먼저 생성
+4. **도메인 예외 정의**: 이 기능에서 발생할 수 있는 도메인 예외 목록 + mappings.py 매핑 계획
+5. 의존성 방향: 레이어 간 호출 흐름 확인
+6. 파라미터 클래스: PaginationParams, PathParams 등 Depends() 패턴 설계 (참조: `api-design` skill)
+7. 폴더 구조: controllers/, dto/, exceptions/, constants/ 폴더 먼저 생성
+
+**설계 게이트**: 위 설계를 사용자에게 요약 공유 → 승인 후 Phase 3 진입. 단, 명확한 요구사항이면 생략 가능.
 
 ### Phase 3: TDD 구현
+
+**테스트 수준 판단**:
+| 상황 | 테스트 전략 |
+|------|-----------|
+| 순수 CRUD (비즈니스 규칙 없음) | API 통합 테스트 위주 |
+| 비즈니스 규칙 존재 | 도메인 유닛 테스트 필수 + 통합 테스트 |
+| 상태 전이/금액 계산 | 유닛 테스트에서 모든 경로 커버 필수 |
+
+**구현 순서**:
 1. 도메인 유닛 테스트 작성 (DB 없이, 순수 Python)
 2. 도메인 로직 구현 → 테스트 통과
 3. Repository Protocol 정의 → 인프라 구현
-4. API 통합 테스트 → Router 구현
+4. API 통합 테스트 → Controller 구현
 5. 엣지 케이스 테스트 추가
 
 ### Phase 4: 품질 검증

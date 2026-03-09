@@ -19,7 +19,7 @@ description: |
 
 ### 2. 아키텍처 준수 (25%)
 - [ ] 어느 레이어에 코드가 들어가는지 알고 있는가?
-- [ ] Folder-first: controllers/, dto/, exceptions/, constants/ 폴더 사용하는가?
+- [ ] Folder-first: controllers/, dto/, exceptions/, constants/는 처음부터 폴더로 생성하는가?
 - [ ] domain/ 에 framework import가 없는가?
 - [ ] Repository Protocol을 사용하는가?
 

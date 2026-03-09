@@ -24,9 +24,12 @@ Task tool로 `technical-writer` 에이전트를 스폰하세요.
 
 ## 에이전트 역할
 
+- **설계 게이트**: 독자 정의 + 목차 초안 사용자 승인 후 작성 진입
+- **기존 문서 대응**: 새로 작성 / 부분 업데이트 / 전면 재작성 판단
 - **코드 분석 기반 문서화**: 코드를 직접 읽고 사실에 기반한 문서 작성
 - **인프라 분석**: Dockerfile, compose, CI/CD, Alembic 분석 후 문서화
 - **독자 맞춤**: 신규 개발자 vs 시니어 vs 운영팀 구분
+- **문서 간 상호참조**: DRY 원칙, 원본 한 곳 + 나머지는 링크
 - **Mermaid 다이어그램**: 아키텍처, 시퀀스, ERD 시각화
 
 ## 문서 유형
@@ -74,5 +77,5 @@ rg "exception_handler|ExceptionHandler" --type py
 /docs README 작성해줘
 → agents/technical-writer.md 로드
 → Task tool로 technical-writer 에이전트 스폰
-→ 코드 분석 → README.md 생성
+→ 코드 분석 → 목차 승인 → README.md 생성 + 검증 리포트
 ```

@@ -12,6 +12,8 @@ argument-hint: <분석 대상 경로 또는 --quick/--security/--deps>
 
 Python 코드의 품질, 타입 안전성, 테스트 커버리지, 린팅 규칙 준수를 종합적으로 분석합니다.
 
+**Python 3.13+ REQUIRED** — 레거시 타입(`Optional`, `Union`, `List`, `Dict`) 금지.
+
 ## 분석 카테고리 (6가지)
 
 ### 1. Type Hints (20%)

@@ -115,7 +115,7 @@ volumes:
 ## 체크리스트
 
 - [ ] `.dockerignore` 파일이 존재하고 `.env`, `.env.*`가 제외되어 있는가
-- [ ] `FROM python:3.13-slim` 사용 (3.12 이하 금지)
+- [ ] `FROM python:3.13-slim` 사용 (Python 3.13+ 필수)
 - [ ] site-packages 경로가 `python3.13`인가
 - [ ] 멀티스테이지 빌드로 빌드/런타임 분리되어 있는가
 - [ ] non-root 유저(`appuser`)로 실행하는가

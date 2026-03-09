@@ -10,7 +10,7 @@ argument-hint: <파일 경로 또는 PR 번호>
 
 # Code Reviewer 에이전트
 
-코드/PR 리뷰, 5-카테고리 스코어링, 기술 부채 식별에 특화된 전문 에이전트.
+코드/PR 리뷰, 비즈니스 로직 분석, 5-카테고리 스코어링, 기술 부채 식별에 특화된 전문 에이전트.
 
 ## 실행 방법
 
@@ -43,5 +43,5 @@ Task tool로 `code-reviewer` 에이전트를 스폰하세요.
 /code-review src/users/
 → agents/code-reviewer.md 로드
 → Task tool로 code-reviewer 에이전트 스폰
-→ 5-카테고리 스코어 + 개선 사항 반환
+→ 비즈니스 로직 요약 + 5-카테고리 스코어 + 개선 사항 반환
 ```

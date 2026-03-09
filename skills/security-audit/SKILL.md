@@ -144,7 +144,7 @@ raise HTTPException(status_code=403, detail="...")
 도메인 예외 -> HTTP 상태코드 매핑은 **한 곳**에서 관리:
 
 ```python
-# {domain}/exceptions/mappings.py
+# core/exceptions/mappings.py (글로벌 매핑 — 원본 위치)
 EXCEPTION_STATUS_MAP: dict[type[DomainException], int] = {
     UnauthorizedException: 401,
     ForbiddenException: 403,
@@ -154,7 +154,8 @@ EXCEPTION_STATUS_MAP: dict[type[DomainException], int] = {
 }
 ```
 
-- 각 도메인 모듈이 자체 mappings.py 보유 가능
+- **글로벌 매핑**: `core/exceptions/mappings.py` (원본, 필수)
+- **도메인별 매핑**: `{domain}/exceptions/mappings.py` (선택적, 도메인 고유 예외용)
 - 글로벌 핸들러가 이 매핑을 참조하여 HTTP 응답 생성
 - 새 예외 추가 시 mappings.py에 등록 필수
 
