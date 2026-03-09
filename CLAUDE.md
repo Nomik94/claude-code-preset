@@ -87,14 +87,53 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlc
 - 서브에이전트 1개 = 1개 작업 (집중 실행)
 - 복잡한 문제일수록 서브에이전트 적극 투입
 
-### Agent Selection
-| Agent | Triggers |
-|-------|----------|
-| engineer | 설계, 구현, API, DB 스키마, 아키텍처, TDD, 성능, 보안, 테스트 |
-| code-reviewer | 코드 리뷰, PR 리뷰, 리팩토링, 코드 품질, 기술 부채 |
-| root-cause-analyst | 버그 원인, 디버깅, 간헐적 에러, 왜 안 돼, 이상 현상 |
-| devops-architect | Docker, CI/CD, 배포, 모니터링, 인프라 |
-| technical-writer | README, API 문서, ADR, 변경 로그 |
+## Routing Priority (NON-NEGOTIABLE)
+
+**코드 관련 요청의 라우팅 우선순위. 반드시 이 순서를 따르라.**
+
+```
+사용자 요청 → ① Agent 매칭? → YES → 에이전트 스폰 (에이전트가 내부에서 스킬 호출)
+                              → NO  → ② Skill 직접 매칭? → YES → 스킬 호출
+                                                          → NO  → 직접 처리
+```
+
+**핵심 규칙**:
+- 코드 관련 작업은 **에이전트를 통해서만** 처리. 오케스트레이터(나)가 직접 코드를 작성하지 않는다.
+- 스킬은 **에이전트 내부에서 참조**되는 것이 기본. 사용자가 `/스킬명`으로 직접 호출하거나, 에이전트 매칭이 안 될 때만 직접 호출.
+- "간단하니까 에이전트 없이 하자"는 판단 금지. 키워드 매칭되면 무조건 에이전트 스폰.
+
+### ① Agent Selection (1순위)
+
+| Agent | Skill | Keywords | 강제 |
+|-------|-------|----------|------|
+| engineer | `/engineer` | 설계, 구현, API, DB 스키마, 아키텍처, TDD, 성능, 보안 | MUST |
+| code-reviewer | `/code-review` | 코드 리뷰, PR 리뷰, 리팩토링, 코드 품질, 기술 부채 | MUST |
+| root-cause-analyst | `/root-cause` | 버그 원인, 디버깅, 간헐적 에러, 왜 안 돼, 이상 현상 | MUST |
+| devops-architect | `/devops` | Docker, CI/CD, 배포, 모니터링, 인프라 | MUST |
+| technical-writer | `/docs` | README, API 문서, ADR, 변경 로그 | SHOULD |
+
+- **MUST**: 키워드 매칭 시 에이전트 스폰 없이 직접 응답 금지.
+- **SHOULD**: 사용자에게 "X 에이전트를 실행할까요?" 한 줄 제안 후 진행.
+- **Skip 조건**: 단순 1줄 수정, `--no-agent` 플래그 명시 시에만 생략 가능.
+
+### ② Skill Triggers (2순위 — 에이전트 미매칭 시)
+
+에이전트가 매칭되지 않는 경우에만 직접 호출. 에이전트가 매칭된 경우 아래 스킬은 에이전트 내부에서 알아서 호출됨.
+
+| Trigger | Skill | Keywords | 강제 |
+|---------|-------|----------|------|
+| 구현 전 | `/confidence-check` | 구현, 만들어, 추가해, implement, create, add | MUST |
+| 완료 후 | `/verify` | 완료, 끝, done, finished, PR, 커밋 | MUST |
+| 빌드 에러 | `/build-fix` | error, Build failed, TypeError, ImportError | MUST |
+| Python 리뷰 | `/python-best-practices` | .py + 리뷰, 코드 품질 | MUST |
+| 위험 작업 | `/checkpoint` | 리팩토링, 삭제, 마이그레이션, 구조 변경 | MUST |
+| 해결 후 | `/learn` | 해결, solved, root cause 발견 | SHOULD |
+| 3+ 파일 기능 | `/feature-planner` | 기능 구현, 큰 작업, 여러 파일 | SHOULD |
+| 커밋/PR 전 | `/audit` | 커밋, PR, 배포 | MUST |
+
+- **MUST**: 스킬 호출 없이 진행 불가.
+- **SHOULD**: 사용자에게 "X 스킬을 실행할까요?" 한 줄 제안 후 진행.
+- **Skip 조건**: 단순 오타, 주석, 포맷팅, `--no-check` 플래그 명시 시에만 생략 가능.
 
 ### Model Selection
 | Task | Model | Count |
@@ -114,20 +153,6 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlc
 
 조합: 복잡한 버그 → Sequential+Context7 | 아키텍처 설계 → Sequential+Context7 | 대규모 리팩토링 → Serena+Sequential
 예외: `--no-mcp` 시 전체 비활성화, 단순 1줄 변경 → Native
-
-## Auto-Skill Triggers
-| Trigger | Skill | Keywords |
-|---------|-------|----------|
-| 구현 전 | `/confidence-check` | 구현, 만들어, implement |
-| 완료 후 | `/verify` | 완료, done, PR |
-| 빌드 에러 | `/build-fix` | error, Build failed |
-| Python 리뷰 | `/python-best-practices` | .py + 리뷰 |
-| 위험 작업 | `/checkpoint` | 리팩토링, 삭제 |
-| 해결 후 | `/learn` (제안) | 해결, solved |
-| 3+ 파일 기능 | `/feature-planner` (제안) | 기능 구현, 큰 작업 |
-| 커밋/PR 전 | `/audit` | 커밋, PR, 배포 |
-
-Skip: 단순 오타, 주석, 포맷팅, `--no-check`
 
 ## Flags
 | Flag | Effect |
@@ -149,7 +174,7 @@ Skip: 단순 오타, 주석, 포맷팅, `--no-check`
 
 ## Context Preservation
 
-컨텍스트 한계 도달 전 능동적 관리. 4단계 자동화 파이프라인.
+컨텍스트 한계 도달 전 능동적 관리. 5단계 자동화 파이프라인.
 
 ### 자동화 파이프라인
 1. **SessionStart** `session-lessons.sh`: 세션 시작 시 프로젝트 교훈(memory/) 존재 여부 안내
@@ -198,8 +223,8 @@ Skip: 단순 오타, 주석, 포맷팅, `--no-check`
 ### By Domain
 - **FastAPI**: `/fastapi`, `/domain-layer`, `/api-design`, `/middleware`, `/environment`
 - **Data**: `/sqlalchemy`, `/alembic`, `/pydantic-schema`
-- **Quality**: `/testing`, `/error-handling`, `/debugging`, `/production-checklist`, `/audit`
-- **Workflow**: `/feature-planner`, `/gap-analysis`, `/learn`, `/checkpoint`
+- **Quality**: `/testing`, `/error-handling`, `/debugging`, `/production-checklist`, `/audit`, `/python-best-practices`
+- **Workflow**: `/feature-planner`, `/gap-analysis`, `/learn`, `/checkpoint`, `/note`
 - **Security**: `/security-audit`
 - **Infra**: `/docker`, `/cicd`, `/monitoring`
 - **Async**: `/background-tasks`, `/websocket`

@@ -20,10 +20,7 @@ fi
 LESSON_COUNT=$(find "$MEMORY_DIR" -name "*.md" ! -name "last-session.md" -type f 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$LESSON_COUNT" -gt 0 ]; then
-  LESSONS=$(find "$MEMORY_DIR" -name "*.md" ! -name "last-session.md" -type f -printf '%f\n' 2>/dev/null | head -5 | sed 's/\.md$//' | tr '\n' ', ' | sed 's/,$//')
-  if [ -z "$LESSONS" ]; then
-    LESSONS=$(find "$MEMORY_DIR" -name "*.md" ! -name "last-session.md" -type f 2>/dev/null | head -5 | xargs -I{} basename {} .md | tr '\n' ', ' | sed 's/,$//')
-  fi
+  LESSONS=$(find "$MEMORY_DIR" -name "*.md" ! -name "last-session.md" -type f 2>/dev/null | head -5 | xargs -I{} basename {} .md | tr '\n' ', ' | sed 's/,$//')
   echo "📚 이 프로젝트에 ${LESSON_COUNT}개의 교훈이 있습니다: ${LESSONS}. 관련 작업 시 $MEMORY_DIR 를 참고하세요." >&2
 fi
 

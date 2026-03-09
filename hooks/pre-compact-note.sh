@@ -21,7 +21,7 @@ fi
 
 # Fallback if jq fails
 if [[ -z "$PROMPT" || "$PROMPT" == "null" ]]; then
-  PROMPT=$(echo "$INPUT" | grep -oP '"(prompt|message|content)"\s*:\s*"\K[^"]+' 2>/dev/null | head -1 || true)
+  PROMPT=$(echo "$INPUT" | grep -oE '"(prompt|message|content)"\s*:\s*"[^"]+"' 2>/dev/null | head -1 | sed 's/.*: *"//;s/"$//' || true)
 fi
 
 if [[ -z "$PROMPT" ]]; then
@@ -44,7 +44,8 @@ if echo "$PROMPT_LOWER" | grep -qE '^\s*/compact\b'; then
 
   WM_COUNT=0
   if [[ -n "$NOTEPAD_FILE" ]]; then
-    WM_COUNT=$(grep -c '^\[' "$NOTEPAD_FILE" 2>/dev/null || echo "0")
+    WM_COUNT=$(grep -c '^\[' "$NOTEPAD_FILE" 2>/dev/null || true)
+    WM_COUNT=${WM_COUNT:-0}
   fi
 
   echo "" >&2

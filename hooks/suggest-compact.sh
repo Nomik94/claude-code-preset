@@ -13,7 +13,8 @@ set -e
 # Configuration (override via env vars)
 INITIAL_THRESHOLD=${COMPACT_INITIAL_THRESHOLD:-50}
 REMINDER_INTERVAL=${COMPACT_REMINDER_INTERVAL:-25}
-COUNTER_FILE="/tmp/claude-tool-counter-$$"
+PROJECT_HASH=$(echo -n "$PWD" | md5 -q 2>/dev/null || echo -n "$PWD" | md5sum 2>/dev/null | cut -d' ' -f1)
+COUNTER_FILE="/tmp/claude-tool-counter-${PROJECT_HASH}"
 NOTEPAD_FILE="${PWD}/.claude/notepad.md"
 GLOBAL_NOTEPAD="${HOME}/.claude/notepad.md"
 
@@ -51,7 +52,8 @@ if [[ "$should_suggest" == "true" ]]; then
   # Count existing notepad entries
   WM_COUNT=0
   if [[ -f "$ACTIVE_NOTEPAD" ]]; then
-    WM_COUNT=$(grep -c '^\[' "$ACTIVE_NOTEPAD" 2>/dev/null || echo "0")
+    WM_COUNT=$(grep -c '^\[' "$ACTIVE_NOTEPAD" 2>/dev/null || true)
+    WM_COUNT=${WM_COUNT:-0}
   fi
 
   echo "" >&2

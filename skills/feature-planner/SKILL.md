@@ -1,6 +1,7 @@
 ---
 name: feature-planner
 description: |
+  기능 구현 계획 수립 및 작업 분해.
   Use when: 기능 구현 계획, 구현 전 설계, 스코프 정의, 작업 분해,
   3개 이상 파일 변경, 기능 추가, feature planning, 구현 어떻게 할까,
   큰 작업, 복잡한 기능, 어디부터 시작, 작업 순서.

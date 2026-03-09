@@ -38,9 +38,15 @@ if ! poetry run ruff version &>/dev/null 2>&1; then
   exit 0
 fi
 
+# Snapshot before auto-fix
+before_hash=$(md5 -q "$file_path" 2>/dev/null || md5sum "$file_path" 2>/dev/null | cut -d' ' -f1)
+
 # Auto-fix: ruff check --fix + ruff format
-poetry run ruff check --fix --quiet "$file_path" 2>/dev/null
-poetry run ruff format --quiet "$file_path" 2>/dev/null
+poetry run ruff check --fix --quiet "$file_path" 2>/dev/null || true
+poetry run ruff format --quiet "$file_path" 2>/dev/null || true
+
+# Snapshot after auto-fix
+after_hash=$(md5 -q "$file_path" 2>/dev/null || md5sum "$file_path" 2>/dev/null | cut -d' ' -f1)
 
 # Report remaining issues (unfixable)
 remaining=$(poetry run ruff check "$file_path" --no-fix 2>/dev/null | head -5 || true)
@@ -51,7 +57,6 @@ if [[ -n "$remaining" ]]; then
   echo "$remaining" | while read -r line; do
     echo "   $line" >&2
   done
-else
-  # Only show message if something was actually fixed
+elif [[ "$before_hash" != "$after_hash" ]]; then
   echo "✨ [Ruff] Auto-formatted $(basename "$file_path")" >&2
 fi

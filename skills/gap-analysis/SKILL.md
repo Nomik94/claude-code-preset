@@ -1,6 +1,7 @@
 ---
 name: gap-analysis
 description: |
+  설계 vs 구현 비교 분석 및 Match Rate 산출.
   Use when: 설계 vs 구현 비교, 스펙 검증, 요구사항 충족 확인,
   gap analysis, 구현 빠진 거 없나, 설계대로 했나, match rate.
   NOT for: 코드 품질 리뷰 (code-reviewer 참조).

@@ -1,6 +1,7 @@
 ---
 name: audit
 description: |
+  커밋/PR 전 프로젝트 규칙 위반 검사.
   Use when: 프로젝트 규칙 검증, 커스텀 린트, 커밋 전 검사,
   audit, 규칙 위반 체크, 프로젝트 컨벤션 확인, 배포 전 검증.
   NOT for: 일반 린트 (ruff/mypy가 처리), 보안 감사 (security-audit 참조).

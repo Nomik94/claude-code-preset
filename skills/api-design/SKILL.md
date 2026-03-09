@@ -242,7 +242,7 @@ async def bulk_delete_users(body: BulkDeleteRequest, ...) -> Response: ...
 @router.post(api("/bulk-update-status"), response_model=BulkOperationResponse)
 async def bulk_update_status(body: BulkStatusUpdateRequest, ...) -> BulkOperationResponse: ...
 
-class BulkOperationResponse(BaseSchema):
+class BulkOperationResponse(CamelModel):
     """Partial success 지원."""
     succeeded: list[int]
     failed: list[BulkErrorDetail]
@@ -310,7 +310,7 @@ PATTERN = re.compile(r'@router\.(get|post|put|patch|delete)\(\s*["\']/(admin|app
 - [ ] 파라미터 클래스 + Depends() 사용 (핸들러에 Query/Path 직접 나열 금지)
 - [ ] 필터/정렬/검색은 Query Parameter
 - [ ] PaginatedResponse 사용 (컬렉션)
-- [ ] ErrorResponse 형식 통일
+- [ ] ErrorBody 형식 통일
 - [ ] 비-CRUD 액션에 적절한 패턴 사용
 - [ ] Idempotency 고려 (결제 등 중요 POST)
 - [ ] JSON 응답은 camelCase (BaseSchema alias)

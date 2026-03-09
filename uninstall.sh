@@ -216,9 +216,9 @@ with open('$CLAUDE_DIR/settings.json', 'w') as f:
 else
   # --- Fallback: hardcoded list (no manifest found) ---
 
-  SKILLS=(fastapi domain-layer api-versioning middleware environment sqlalchemy alembic pydantic-schema testing error-handling debugging production-checklist security-audit monitoring docker cicd background-tasks websocket confidence-check verify build-fix feature-planner gap-analysis learn checkpoint audit note engineer code-review root-cause devops docs)
+  SKILLS=(fastapi domain-layer api-design middleware environment sqlalchemy alembic pydantic-schema testing error-handling debugging production-checklist security-audit monitoring docker cicd background-tasks websocket confidence-check verify build-fix feature-planner gap-analysis learn checkpoint audit note python-best-practices engineer code-review root-cause devops docs)
   AGENTS=(engineer code-reviewer root-cause-analyst devops-architect technical-writer)
-  HOOKS=(python-lint-check.sh python-type-check.sh python-debug-check.sh pre-compact-save.sh session-summary.py suggest-compact.sh pre-compact-note.sh)
+  HOOKS=(python-lint-check.sh python-type-check.sh python-debug-check.sh pre-compact-save.sh session-summary.py suggest-compact.sh pre-compact-note.sh session-lessons.sh)
 
   # Remove CLAUDE.md
   if [[ -f "$CLAUDE_DIR/CLAUDE.md" ]]; then

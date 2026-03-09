@@ -39,7 +39,7 @@ if ! poetry run mypy --version &>/dev/null 2>&1; then
 fi
 
 # Run mypy on the specific file
-errors=$(poetry run mypy "$file_path" --no-error-summary 2>/dev/null | grep -E "^${file_path}" | head -5 || true)
+errors=$(poetry run mypy "$file_path" --no-error-summary 2>/dev/null | grep -E "^${file_path}" 2>/dev/null | head -5 || true)
 
 if [[ -n "$errors" ]]; then
   echo "⚠️  [mypy] Type errors in $(basename "$file_path"):" >&2

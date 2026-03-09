@@ -8,6 +8,7 @@ Next session, Claude can read this for prior context.
 
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -166,8 +167,8 @@ def main():
         with open(summary_path, "w") as f:
             f.write(summary)
 
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"session-summary: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":
