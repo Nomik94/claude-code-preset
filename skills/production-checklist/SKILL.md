@@ -31,7 +31,7 @@ description: |
 - [ ] Refresh Token Rotation 적용 (일회용 refresh token + Redis 블랙리스트)
 - [ ] PyJWT 사용 (python-jose 아님)
 - [ ] `pip-audit` 또는 `safety check`에서 알려진 취약점 없음
-- [ ] 비밀번호 해싱에 bcrypt/argon2와 적절한 work factor 사용
+- [ ] 비밀번호 해싱에 pwdlib + argon2와 적절한 work factor 사용
 - [ ] SQL 인젝션 방지 (파라미터화된 쿼리 / ORM만 사용)
 - [ ] 모든 엔드포인트에 Pydantic 모델을 통한 입력 유효성 검증
 

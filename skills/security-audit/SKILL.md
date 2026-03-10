@@ -6,7 +6,7 @@ description: |
   Refresh Token Rotation, 토큰 블랙리스트, Redis 토큰 저장소,
   권한 관리, RBAC 설정, 역할 기반 접근제어, require_roles, Role vs UserRole,
   예외 처리 설계, UnauthorizedException, ForbiddenException, mappings.py,
-  패스워드 해싱, 비밀번호 암호화, bcrypt, HashedPassword,
+  패스워드 해싱, 비밀번호 암호화, argon2, HashedPassword,
   보안 점검, 보안 체크리스트, 취약점 확인, OWASP, 코드 감사,
   CORS 설정, rate limiting, 에러 응답에 민감정보 노출.
   NOT for: 일반적인 HTTP 상태코드 의미, OAuth2 프로바이더 연동.
@@ -158,19 +158,25 @@ DOMAIN_EXCEPTION_MAPPINGS: dict[type[Exception], int] = {
 ## 7. 패스워드 해싱 (Value Object)
 
 ```python
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
+
+password_hash = PasswordHash((Argon2Hasher(),))
+
 @dataclass(frozen=True, slots=True)
 class HashedPassword:
     value: str
 
     @classmethod
     def from_plain(cls, plain: str) -> Self:
-        return cls(value=pwd_context.hash(plain))
+        return cls(value=password_hash.hash(plain))
 
     def verify(self, plain: str) -> bool:
-        return pwd_context.verify(plain, self.value)
+        return password_hash.verify(plain, self.value)
 ```
 
-- `pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")`
+- `pwdlib` + `Argon2Hasher` 사용 (passlib 대체)
+- `password_hash.is_deprecated(hashed)` 로 알고리즘 마이그레이션 감지 가능
 - 도메인 레이어에 위치, framework import 없음
 - plain password를 도메인 엔티티에 저장하지 않음
 

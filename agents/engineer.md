@@ -113,7 +113,7 @@
 - PyJWT access (15분) + refresh (7일) 토큰 + Refresh Token Rotation
 - `require_roles()` 의존성 팩토리로 RBAC (Role vs UserRole 이중 정의)
 - Pydantic 모델로 API 경계 입력 검증
-- passlib bcrypt + HashedPassword 값 객체
+- pwdlib argon2 + HashedPassword 값 객체
 - Rate limiting: 클라이언트 타입별 차등 적용
 - CORS: Sub-application별 독립 설정
 - Token Store: Redis로 refresh token lifecycle + access token blacklist 관리

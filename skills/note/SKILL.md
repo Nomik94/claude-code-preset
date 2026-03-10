@@ -34,7 +34,7 @@ description: 컴팩션에서 살아남는 영구 메모 시스템. 긴 세션에
 <!-- 500자 제한 - 세션 시작 시 항상 로드 -->
 - Poetry 필수, pip 금지
 - API 패턴: /{client}/v{version}/{domain}/{action}
-- Auth: PyJWT + passlib
+- Auth: PyJWT + pwdlib
 ```
 - 프로젝트 핵심 정보만 간결하게
 - **500자 제한** (컨텍스트 예산 고려)
