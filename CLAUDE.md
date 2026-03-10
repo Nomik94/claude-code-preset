@@ -2,13 +2,14 @@
 
 ## Language
 - **ALWAYS respond in Korean (한글)**
-- Code comments/variables: English
+- Code comments: Korean (한글)
+- Variables/identifiers: English
 - Technical terms: English when common (WebSocket, API, etc.)
 
 ## Stack
 - Python 3.13+ / FastAPI (async) / SQLAlchemy 2.0 (async)
 - Alembic / Pydantic v2 / pydantic-settings
-- PyJWT + passlib (bcrypt)
+- PyJWT + pwdlib (argon2)
 - **Poetry** (mandatory, no pip/uv/requirements.txt)
 - Ruff + mypy --strict / pytest + pytest-asyncio + httpx
 - structlog (JSON prod, console dev) / cashews or redis.asyncio
