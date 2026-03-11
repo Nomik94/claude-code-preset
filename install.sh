@@ -235,6 +235,7 @@ infra_hook_entries = [
     {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-lint-check.sh', 'timeout': 10000},
     {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-type-check.sh', 'timeout': 10000},
     {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-debug-check.sh', 'timeout': 5000},
+    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-suppress-check.sh', 'timeout': 5000},
 ]
 
 # Merge: add claude-code-preset hooks without removing existing ones
