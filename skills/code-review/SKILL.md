@@ -10,11 +10,11 @@ argument-hint: <파일 경로 또는 PR 번호>
 
 # Code Reviewer 에이전트
 
-`agents/code-reviewer.md`를 로드하여 에이전트를 스폰하라.
+`~/.claude/agents/code-reviewer.md`를 로드하여 에이전트를 스폰하라.
 
 **프롬프트 필수 포함**:
 - `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlchemy 2.0/Poetry`
-- `agents/code-reviewer.md`의 전체 내용
+- `~/.claude/agents/code-reviewer.md`의 전체 내용
 - 리뷰 대상: $ARGUMENTS
 
 **필수 스킬** (트리거 조건 충족 시 반드시 호출):
