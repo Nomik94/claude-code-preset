@@ -40,24 +40,7 @@ Ruff + mypy --strict / pytest + pytest-asyncio + httpx / structlog / Docker + do
 - **API Versioning**: `/{client}/v{version}/{domain}/{action}` via EndpointPath
 - **lazy="raise"** — relationship 기본값, N+1 컴파일타임 방지
 
-### Modern Python Syntax (3.13+ 필수)
-
-| Legacy (금지) | Modern (필수) |
-|--------------|--------------|
-| `Optional[X]` | `X \| None` |
-| `Union[X, Y]` | `X \| Y` |
-| `List[X]`, `Dict[K,V]`, `Tuple[X,...]`, `Set[X]` | `list[X]`, `dict[K,V]`, `tuple[X,...]`, `set[X]` |
-| `from typing import List, Dict, Optional, Union` | builtin 제네릭 사용 |
-| `from typing import Sequence` | `from collections.abc import Sequence` |
-| `-> "ClassName"` (self 반환) | `-> Self` (`from typing import Self`) |
-| `class Status(str, Enum)` | `class Status(StrEnum)` |
-| `@dataclass` | `@dataclass(slots=True)` |
-
-**유지되는 typing imports**: `Generic`, `TypeVar`, `Protocol`, `runtime_checkable`, `Literal`, `Self`, `ClassVar`, `TypeAlias`, `overload`
-
-### Pydantic v2 필수
-- `model_config = ConfigDict(...)` (not `class Config:`)
-- `model_dump()` / `model_validate()` / `field_validator` / `model_validator`
+> Python 문법 상세(Modern Syntax, Pydantic v2)는 `/python-best-practices`, `/fastapi` 스킬 참조.
 
 ## Frontend Rules (FE 모드 활성 시)
 
@@ -65,13 +48,7 @@ Ruff + mypy --strict / pytest + pytest-asyncio + httpx / structlog / Docker + do
 React 18+ / Next.js 14+ (App Router) / TypeScript strict mode
 **pnpm** (mandatory, no npm/yarn) / Tailwind CSS / shadcn/ui / ESLint + Prettier
 
-### Core Rules
-1. **Server Components 기본**, `'use client'` 최소화
-2. `loading.tsx` / `error.tsx` / `not-found.tsx` 필수
-3. Image → `next/image`, Link → `next/link`
-4. 상태관리: URL state > Context > Zustand (순서대로 검토)
-5. API 호출: Server Actions > Route Handlers > 외부 fetch
-6. CSS: Tailwind 유틸리티 우선, 커스텀 CSS 최소화
+> FE 상세 규칙(Server Components, 상태관리, API 호출)은 `/react-best-practices` 스킬 참조.
 
 ## Naming Conventions
 
