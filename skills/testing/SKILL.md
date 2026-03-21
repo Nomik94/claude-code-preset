@@ -205,3 +205,5 @@ markers = ["slow: marks tests as slow", "integration: marks integration tests"]
 - [ ] 각 테스트 독립 -- 순서 의존성 없음
 - [ ] 도메인 테스트에 DB/framework import 없음
 - [ ] Mock 객체에 `spec=` 파라미터로 타입 안전성 확보
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

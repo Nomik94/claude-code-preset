@@ -424,3 +424,5 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install
 docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
 docker history myapp:latest
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

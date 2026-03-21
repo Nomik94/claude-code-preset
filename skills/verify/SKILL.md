@@ -93,3 +93,5 @@ Verify: [N]/7 passed [BE/FE/Fullstack]
 
 → [검증 완료 / 검증 실패: 수정 필요 항목]
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

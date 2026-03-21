@@ -118,3 +118,5 @@ match_rate = (matched + partial * 0.5) / total_designed_items * 100
 ### Action Items
 1. [각 갭에 대한 구체적 수정 사항]
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

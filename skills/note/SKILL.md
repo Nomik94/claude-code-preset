@@ -114,3 +114,5 @@ description: |
 | 컨텍스트 70%+ | Priority Context 저장 제안 |
 | 복잡한 문제 해결 후 | Working Memory 저장 제안 |
 | 세션 종료 전 | 미완료 작업 상태 저장 제안 |
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

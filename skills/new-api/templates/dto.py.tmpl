@@ -1,0 +1,104 @@
+"""
+{Resource} DTO — 요청/응답 스키마 정의
+
+이 파일은 두 모듈로 분리하여 사용한다:
+- dto/{resource}/{resource}_request.py  (요청 스키마)
+- dto/{resource}/{resource}_response.py (응답 스키마)
+"""
+
+# === dto/{resource}/{resource}_request.py ===
+
+from pydantic import BaseModel, ConfigDict, field_validator
+
+
+class {Resource}CreateRequest(BaseModel):
+    """
+    {Resource} 생성 요청 스키마.
+
+    API JSON 필드는 camelCase를 사용한다.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        alias_generator=lambda field_name: _to_camel(field_name),
+    )
+
+    name: str
+    # TODO: 리소스에 맞는 필드 추가
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """이름이 비어있지 않은지 검증한다."""
+        if not v.strip():
+            msg = "이름은 비어있을 수 없습니다"
+            raise ValueError(msg)
+        return v.strip()
+
+
+class {Resource}UpdateRequest(BaseModel):
+    """
+    {Resource} 수정 요청 스키마.
+
+    부분 수정을 지원하기 위해 모든 필드를 Optional로 선언한다.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        alias_generator=lambda field_name: _to_camel(field_name),
+    )
+
+    name: str | None = None
+    # TODO: 리소스에 맞는 필드 추가
+
+
+# === dto/{resource}/{resource}_response.py ===
+
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
+
+class {Resource}Response(BaseModel):
+    """
+    {Resource} 단일 응답 스키마.
+    """
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        alias_generator=lambda field_name: _to_camel(field_name),
+    )
+
+    id: int
+    name: str
+    created_at: datetime
+    updated_at: datetime
+    # TODO: 리소스에 맞는 필드 추가
+
+
+class {Resource}ListResponse(BaseModel):
+    """
+    {Resource} 목록 응답 스키마.
+
+    페이지네이션 정보를 포함한다.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        alias_generator=lambda field_name: _to_camel(field_name),
+    )
+
+    items: list[{Resource}Response]
+    total: int
+    page: int
+    size: int
+    total_pages: int
+
+
+# === 공통 유틸리티 ===
+
+def _to_camel(snake: str) -> str:
+    """snake_case를 camelCase로 변환한다."""
+    components = snake.split("_")
+    return components[0] + "".join(x.capitalize() for x in components[1:])

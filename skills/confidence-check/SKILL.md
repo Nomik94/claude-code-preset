@@ -78,3 +78,5 @@ Confidence: XX% [BE/FE/Fullstack]
 - 기술적 확신: XX% -- [상세]
 → [진행 / 해결 필요: 불확실 항목 요약]
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

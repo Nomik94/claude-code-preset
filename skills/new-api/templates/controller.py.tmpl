@@ -1,0 +1,98 @@
+"""
+{Resource} 컨트롤러 — API 엔드포인트 정의
+"""
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+
+from dto.{resource}.{resource}_request import (
+    {Resource}CreateRequest,
+    {Resource}UpdateRequest,
+)
+from dto.{resource}.{resource}_response import (
+    {Resource}ListResponse,
+    {Resource}Response,
+)
+from services.{resource}_service import {Resource}Service
+
+router = APIRouter(
+    prefix="/{resource_kebab}",
+    tags=["{Resource}"],
+)
+
+
+def _get_service() -> {Resource}Service:
+    """DI를 통한 서비스 인스턴스 제공"""
+    return {Resource}Service()
+
+
+ServiceDep = Annotated[{Resource}Service, Depends(_get_service)]
+
+
+@router.post(
+    "",
+    response_model={Resource}Response,
+    status_code=status.HTTP_201_CREATED,
+    summary="{Resource} 생성",
+)
+async def create_{resource}(
+    request: {Resource}CreateRequest,
+    service: ServiceDep,
+) -> {Resource}Response:
+    """{Resource}를 생성한다."""
+    return await service.create(request)
+
+
+@router.get(
+    "",
+    response_model={Resource}ListResponse,
+    summary="{Resource} 목록 조회",
+)
+async def get_{resource}_list(
+    service: ServiceDep,
+    page: int = 1,
+    size: int = 20,
+) -> {Resource}ListResponse:
+    """{Resource} 목록을 페이지네이션하여 조회한다."""
+    return await service.get_list(page=page, size=size)
+
+
+@router.get(
+    "/{{{resource}_id}}",
+    response_model={Resource}Response,
+    summary="{Resource} 상세 조회",
+)
+async def get_{resource}(
+    {resource}_id: int,
+    service: ServiceDep,
+) -> {Resource}Response:
+    """ID로 {Resource}를 조회한다."""
+    return await service.get_by_id({resource}_id)
+
+
+@router.patch(
+    "/{{{resource}_id}}",
+    response_model={Resource}Response,
+    summary="{Resource} 수정",
+)
+async def update_{resource}(
+    {resource}_id: int,
+    request: {Resource}UpdateRequest,
+    service: ServiceDep,
+) -> {Resource}Response:
+    """{Resource}를 수정한다."""
+    return await service.update({resource}_id, request)
+
+
+@router.delete(
+    "/{{{resource}_id}}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="{Resource} 삭제",
+)
+async def delete_{resource}(
+    {resource}_id: int,
+    service: ServiceDep,
+) -> None:
+    """{Resource}를 삭제한다."""
+    await service.delete({resource}_id)

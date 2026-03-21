@@ -1,0 +1,55 @@
+"use client";
+
+import { useEffect } from "react";
+
+interface {PageName}ErrorProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+}
+
+/**
+ * {PageName} 에러 경계
+ *
+ * 반드시 Client Component여야 한다 ("use client" 필수).
+ * 에러 발생 시 사용자에게 친화적인 메시지와 재시도 버튼을 제공한다.
+ */
+export default function {PageName}Error({ error, reset }: {PageName}ErrorProps) {
+  useEffect(() => {
+    // TODO: 에러 로깅 서비스에 전송
+    console.error("[{PageName}] 에러 발생:", error);
+  }, [error]);
+
+  return (
+    <main
+      className="container mx-auto flex min-h-[50vh] flex-col items-center justify-center px-4 py-8"
+      role="alert"
+      aria-label="에러 발생"
+    >
+      <div className="text-center">
+        <h2 className="mb-4 text-2xl font-bold text-gray-900">
+          문제가 발생했습니다
+        </h2>
+
+        <p className="mb-6 text-gray-600">
+          페이지를 불러오는 중 오류가 발생했습니다.
+          잠시 후 다시 시도해 주세요.
+        </p>
+
+        {error.digest && (
+          <p className="mb-4 text-sm text-gray-400">
+            에러 코드: {error.digest}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={reset}
+          className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          aria-label="페이지 다시 로드"
+        >
+          다시 시도
+        </button>
+      </div>
+    </main>
+  );
+}

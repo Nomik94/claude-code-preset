@@ -1,0 +1,34 @@
+import type { Metadata } from "next";
+
+import { {PageName}Content } from "@/components/{routePath}/{PageName}Content";
+
+export const metadata: Metadata = {
+  title: "{PageName}",
+  description: "{description}",
+};
+
+/**
+ * {PageName} 페이지
+ *
+ * Server Component로 동작한다.
+ * 데이터 fetching은 이 레벨에서 수행하고, 하위 컴포넌트에 props로 전달한다.
+ */
+export default async function {PageName}Page() {
+  // TODO: 서버 사이드 데이터 fetching
+  // const data = await fetchData();
+
+  return (
+    <main
+      className="container mx-auto px-4 py-8"
+      aria-label="{description}"
+    >
+      <h1 className="mb-6 text-3xl font-bold tracking-tight">
+        {PageName}
+      </h1>
+
+      <section aria-label="{PageName} 콘텐츠">
+        <{PageName}Content />
+      </section>
+    </main>
+  );
+}

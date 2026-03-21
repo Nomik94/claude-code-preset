@@ -1,0 +1,128 @@
+"""
+{Resource} 서비스 — 비즈니스 로직 계층
+"""
+
+from dto.{resource}.{resource}_request import (
+    {Resource}CreateRequest,
+    {Resource}UpdateRequest,
+)
+from dto.{resource}.{resource}_response import (
+    {Resource}ListResponse,
+    {Resource}Response,
+)
+from repositories.{resource}_repository import {Resource}Repository
+
+
+class {Resource}Service:
+    """
+    {Resource} 비즈니스 로직을 담당한다.
+
+    Repository를 주입받아 데이터 접근을 위임한다.
+    """
+
+    def __init__(self, repository: {Resource}Repository | None = None) -> None:
+        self._repository = repository or {Resource}Repository()
+
+    async def create(self, request: {Resource}CreateRequest) -> {Resource}Response:
+        """
+        {Resource}를 생성한다.
+
+        Args:
+            request: 생성 요청 DTO
+
+        Returns:
+            생성된 {Resource} 응답 DTO
+        """
+        entity = await self._repository.create(
+            name=request.name,
+            # TODO: 추가 필드 전달
+        )
+        return {Resource}Response.model_validate(entity)
+
+    async def get_by_id(self, {resource}_id: int) -> {Resource}Response:
+        """
+        ID로 {Resource}를 조회한다.
+
+        Args:
+            {resource}_id: 조회할 {Resource} ID
+
+        Returns:
+            {Resource} 응답 DTO
+
+        Raises:
+            {Resource}NotFoundError: 해당 ID의 {Resource}가 없을 때
+        """
+        entity = await self._repository.get_by_id({resource}_id)
+        if entity is None:
+            # TODO: 커스텀 예외로 교체
+            msg = f"{Resource} not found: {{{resource}_id}}"
+            raise ValueError(msg)
+        return {Resource}Response.model_validate(entity)
+
+    async def get_list(
+        self,
+        *,
+        page: int = 1,
+        size: int = 20,
+    ) -> {Resource}ListResponse:
+        """
+        {Resource} 목록을 페이지네이션하여 조회한다.
+
+        Args:
+            page: 페이지 번호 (1부터 시작)
+            size: 페이지 크기
+
+        Returns:
+            페이지네이션된 {Resource} 목록 응답 DTO
+        """
+        offset = (page - 1) * size
+        entities, total = await self._repository.get_list(
+            offset=offset,
+            limit=size,
+        )
+        total_pages = (total + size - 1) // size
+
+        return {Resource}ListResponse(
+            items=[{Resource}Response.model_validate(e) for e in entities],
+            total=total,
+            page=page,
+            size=size,
+            total_pages=total_pages,
+        )
+
+    async def update(
+        self,
+        {resource}_id: int,
+        request: {Resource}UpdateRequest,
+    ) -> {Resource}Response:
+        """
+        {Resource}를 수정한다.
+
+        Args:
+            {resource}_id: 수정할 {Resource} ID
+            request: 수정 요청 DTO
+
+        Returns:
+            수정된 {Resource} 응답 DTO
+        """
+        update_data = request.model_dump(exclude_unset=True)
+        entity = await self._repository.update({resource}_id, **update_data)
+        if entity is None:
+            msg = f"{Resource} not found: {{{resource}_id}}"
+            raise ValueError(msg)
+        return {Resource}Response.model_validate(entity)
+
+    async def delete(self, {resource}_id: int) -> None:
+        """
+        {Resource}를 삭제한다.
+
+        Args:
+            {resource}_id: 삭제할 {Resource} ID
+
+        Raises:
+            {Resource}NotFoundError: 해당 ID의 {Resource}가 없을 때
+        """
+        deleted = await self._repository.delete({resource}_id)
+        if not deleted:
+            msg = f"{Resource} not found: {{{resource}_id}}"
+            raise ValueError(msg)

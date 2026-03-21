@@ -249,3 +249,5 @@ poetry run lint-imports
 | `--security` | 보안 집중 분석 |
 | `--deps` | 의존성 집중 분석 |
 | `--arch` | 아키텍처 준수 분석 |
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

@@ -483,3 +483,5 @@ function Component({ showExtra }: { showExtra: boolean }) {
 [ ] children 우선, render props는 데이터 주입 시에만
 [ ] React 19: forwardRef 제거, use() 활용
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

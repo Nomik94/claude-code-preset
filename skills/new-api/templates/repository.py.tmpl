@@ -1,0 +1,133 @@
+"""
+{Resource} 리포지토리 — 데이터 접근 계층
+"""
+
+from collections.abc import Sequence
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class {Resource}Repository:
+    """
+    {Resource} 엔티티에 대한 데이터 접근을 담당한다.
+
+    모든 DB 작업은 AsyncSession을 사용한다.
+    """
+
+    def __init__(self, session: AsyncSession | None = None) -> None:
+        self._session = session
+        # TODO: 실제 사용 시 세션 주입 필수
+
+    async def create(self, **kwargs: object) -> object:
+        """
+        {Resource} 엔티티를 생성한다.
+
+        Args:
+            **kwargs: 엔티티 필드 값
+
+        Returns:
+            생성된 엔티티
+
+        Example:
+            >>> entity = await repo.create(name="example")
+        """
+        # TODO: 실제 모델 클래스로 교체
+        # entity = {Resource}Model(**kwargs)
+        # self._session.add(entity)
+        # await self._session.flush()
+        # await self._session.refresh(entity)
+        # return entity
+        raise NotImplementedError
+
+    async def get_by_id(self, {resource}_id: int) -> object | None:
+        """
+        ID로 {Resource} 엔티티를 조회한다.
+
+        Args:
+            {resource}_id: 조회할 엔티티 ID
+
+        Returns:
+            엔티티 또는 None
+        """
+        # TODO: 실제 모델 클래스로 교체
+        # stmt = select({Resource}Model).where(
+        #     {Resource}Model.id == {resource}_id,
+        # )
+        # result = await self._session.execute(stmt)
+        # return result.scalar_one_or_none()
+        raise NotImplementedError
+
+    async def get_list(
+        self,
+        *,
+        offset: int = 0,
+        limit: int = 20,
+    ) -> tuple[Sequence[object], int]:
+        """
+        {Resource} 엔티티 목록을 페이지네이션하여 조회한다.
+
+        Args:
+            offset: 시작 위치
+            limit: 조회 개수
+
+        Returns:
+            (엔티티 목록, 전체 개수) 튜플
+        """
+        # TODO: 실제 모델 클래스로 교체
+        # count_stmt = select(func.count()).select_from({Resource}Model)
+        # count_result = await self._session.execute(count_stmt)
+        # total = count_result.scalar_one()
+        #
+        # stmt = (
+        #     select({Resource}Model)
+        #     .offset(offset)
+        #     .limit(limit)
+        #     .order_by({Resource}Model.created_at.desc())
+        # )
+        # result = await self._session.execute(stmt)
+        # entities = result.scalars().all()
+        #
+        # return entities, total
+        raise NotImplementedError
+
+    async def update(self, {resource}_id: int, **kwargs: object) -> object | None:
+        """
+        {Resource} 엔티티를 수정한다.
+
+        Args:
+            {resource}_id: 수정할 엔티티 ID
+            **kwargs: 수정할 필드 값
+
+        Returns:
+            수정된 엔티티 또는 None
+        """
+        # TODO: 실제 모델 클래스로 교체
+        # entity = await self.get_by_id({resource}_id)
+        # if entity is None:
+        #     return None
+        # for key, value in kwargs.items():
+        #     setattr(entity, key, value)
+        # await self._session.flush()
+        # await self._session.refresh(entity)
+        # return entity
+        raise NotImplementedError
+
+    async def delete(self, {resource}_id: int) -> bool:
+        """
+        {Resource} 엔티티를 삭제한다.
+
+        Args:
+            {resource}_id: 삭제할 엔티티 ID
+
+        Returns:
+            삭제 성공 여부
+        """
+        # TODO: 실제 모델 클래스로 교체
+        # entity = await self.get_by_id({resource}_id)
+        # if entity is None:
+        #     return False
+        # await self._session.delete(entity)
+        # await self._session.flush()
+        # return True
+        raise NotImplementedError

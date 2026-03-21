@@ -72,3 +72,5 @@ Build Fix: [N errors remain] [BE/FE]
 - [에러 유형]: [수동 수정 필요 사유]
 → 제안: [수정 방법]
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

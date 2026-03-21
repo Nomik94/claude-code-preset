@@ -80,3 +80,5 @@ git stash push -m "checkpoint: before [description]"
 - Rollback: `git reset --hard [hash]`
 - Confirm: [MEDIUM 이상이면 사용자 확인 대기]
 ```
+
+자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.
