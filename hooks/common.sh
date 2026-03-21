@@ -5,9 +5,6 @@
 # 스킵 대상 디렉토리 목록
 SKIP_DIRS="node_modules|__pycache__|\.git|\.next|dist|build|\.venv|venv"
 
-# 스킵 대상 테스트/config 파일 패턴
-SKIP_FILES="test_*|*_test.py|*.test.*|*.spec.*|conftest.py|*.config.*|setup.py|setup.cfg"
-
 # 파일 경로 유효성 검사 (빈 값, 존재 여부)
 # 사용: validate_file_path "$path" || exit 0
 validate_file_path() {

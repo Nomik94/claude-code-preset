@@ -240,7 +240,7 @@ legacy_post_tool_use = ['python-lint-check.sh', 'python-type-check.sh', 'python-
 # 이전 설치의 hook도 제거 (재설치 시 절대경로로 다시 등록됨)
 reinstall_cleanup = ['session-summary.py', 'session-lessons.sh', 'todo-continuation.sh',
                      'auto-format.sh', 'type-check.sh', 'console-log-check.sh', 'convention-check.sh',
-                     'post-tool-use.sh', 'common.sh']
+                     'post-tool-use.sh', 'common.sh', 'pre-tool-use-safety.sh']
 
 def clean_event(event_name, script_names):
     if event_name in hooks:
@@ -257,6 +257,7 @@ clean_event('PostToolUse', legacy_post_tool_use + reinstall_cleanup)
 clean_event('SessionEnd', reinstall_cleanup)
 clean_event('SessionStart', reinstall_cleanup)
 clean_event('Stop', reinstall_cleanup)
+clean_event('PreToolUse', reinstall_cleanup)
 
 # Define claude-code-preset hooks (fullstack: BE + FE)
 infra_hook_entries = [
@@ -322,6 +323,20 @@ if todo_cmd not in stop_commands:
         'hooks': [{'type': 'command', 'command': todo_cmd, 'timeout': 5000}]
     })
     hooks['Stop'] = stop_hooks
+
+# PreToolUse hook - block dangerous commands
+pre_hooks = hooks.get('PreToolUse', [])
+safety_cmd = f'bash {HOOKS_DIR}/pre-tool-use-safety.sh'
+pre_commands = set()
+for entry in pre_hooks:
+    for h in entry.get('hooks', []):
+        pre_commands.add(h.get('command', ''))
+if safety_cmd not in pre_commands:
+    pre_hooks.append({
+        'matcher': 'Bash',
+        'hooks': [{'type': 'command', 'command': safety_cmd, 'timeout': 3000}]
+    })
+    hooks['PreToolUse'] = pre_hooks
 
 settings['hooks'] = hooks
 
@@ -408,7 +423,7 @@ fi
 echo -e "  ⚙️  settings.json (existing settings preserved)"
 echo -e "  🛠️  $skill_count skills"
 echo -e "  🤖 $agent_count agents"
-echo -e "  🪝 $hook_count hooks (auto-format, type-check, convention-check)"
+echo -e "  🪝 $hook_count hooks (auto-format, safety, convention-check)"
 echo ""
 if [[ -d "$BACKUP_DIR" ]]; then
   echo -e "  📦 Backup: $BACKUP_DIR"

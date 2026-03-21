@@ -120,6 +120,7 @@ for entry in post_tool:
         and 'type-check.sh' not in h.get('command', '')
         and 'console-log-check.sh' not in h.get('command', '')
         and 'convention-check.sh' not in h.get('command', '')
+        and 'post-tool-use.sh' not in h.get('command', '')
     ]
 post_tool = [e for e in post_tool if e.get('hooks')]
 if post_tool:
@@ -166,6 +167,19 @@ if stop_hooks:
 elif 'Stop' in hooks:
     del hooks['Stop']
 
+# Clean PreToolUse (pre-tool-use-safety)
+pre_tool = hooks.get('PreToolUse', [])
+for entry in pre_tool:
+    entry['hooks'] = [
+        h for h in entry.get('hooks', [])
+        if 'pre-tool-use-safety.sh' not in h.get('command', '')
+    ]
+pre_tool = [e for e in pre_tool if e.get('hooks')]
+if pre_tool:
+    hooks['PreToolUse'] = pre_tool
+elif 'PreToolUse' in hooks:
+    del hooks['PreToolUse']
+
 # Remove Skill(*) from permissions
 perms = settings.get('permissions', {})
 allow = perms.get('allow', [])
@@ -192,7 +206,7 @@ else
 
   SKILLS=(audit build-fix careful checkpoint cicd composition-patterns confidence-check docker fastapi feature-planner freeze gap-analysis learn new-api new-page note production-checklist python-best-practices react-best-practices security-audit sqlalchemy testing verify web-design-guidelines webapp-testing)
   AGENTS=(planner architect engineer reviewer debugger devops writer)
-  HOOKS=(post-tool-use.sh common.sh auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh session-summary.py session-lessons.sh)
+  HOOKS=(post-tool-use.sh common.sh pre-tool-use-safety.sh todo-continuation.sh session-summary.py session-lessons.sh)
 
   # Remove CLAUDE.md
   if [[ -f "$CLAUDE_DIR/CLAUDE.md" ]]; then

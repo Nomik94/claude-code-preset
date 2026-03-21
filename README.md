@@ -3,7 +3,7 @@
 Claude Code를 위한 **풀스택 개발 프리셋**.
 Python(FastAPI) 백엔드 + React/Next.js 프론트엔드를 기획부터 배포까지 지원합니다.
 
-clone → `install.sh` 실행만으로 25개 skill, 7개 agent, 5개 hook이 설정됩니다.
+clone → `install.sh` 실행만으로 25개 skill, 7개 agent, 6개 hook이 설정됩니다.
 
 ## What is this?
 
@@ -114,7 +114,9 @@ claude
 │   ├── careful/                       # 위험 명령 차단 (rm -rf, DROP TABLE, force-push)
 │   └── freeze/                        # 특정 디렉토리만 수정 허용
 │
-├── hooks/ (5개)
+├── hooks/ (6개)
+│   │  # PreToolUse (Bash 실행 전 자동)
+│   ├── pre-tool-use-safety.sh         # 위험 명령 사전 차단 (rm -rf, force push 등)
 │   │  # PostToolUse (Edit/Write 시 자동)
 │   ├── common.sh                      # 공통 유틸 (파일 검증, 스킵 판단)
 │   ├── post-tool-use.sh               # 통합 dispatcher (포맷, 타입, 디버그, 컨벤션)
@@ -201,7 +203,7 @@ skills/fastapi/
 └── gotchas.md            # Claude가 자주 틀리는 패턴
 ```
 
-모든 23개 스킬에 `gotchas.md`가 포함되어 있습니다.
+23개 스킬에 `gotchas.md`가 포함되어 있습니다.
 
 ## Safety Rules
 
@@ -289,7 +291,7 @@ cd claude-code-preset && ./install.sh
 | Gotchas | 23개 (전 스킬 Claude 빈출 실수 패턴) |
 | References | 23개 (9개 스킬 Progressive Disclosure) |
 | Scripts/Templates | 17개 (실행 가능 스크립트 + 보일러플레이트) |
-| Hooks | 5개 (PostToolUse dispatcher 1 + common 1 + Session 2 + Stop 1) |
+| Hooks | 6개 (PreToolUse 1 + PostToolUse 2 + Session 2 + Stop 1) |
 
 ## 출처 및 참고
 
