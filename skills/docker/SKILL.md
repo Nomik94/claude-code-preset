@@ -1,133 +1,426 @@
 ---
 name: docker
 description: |
-  FastAPI + Poetry Docker 설정 레퍼런스.
-  Use when: Dockerfile 작성, Dockerfile 수정, docker-compose 설정, compose 세팅,
-  이미지 빌드, 멀티스테이지 빌드, 이미지 최적화, 이미지 크기 줄이기,
-  로컬 개발환경 구성, 개발환경 Docker로, DB/Redis 컨테이너,
-  배포 준비, 컨테이너화, healthcheck 설정, non-root 유저,
-  .dockerignore, 레이어 캐싱, Poetry Docker 설치.
-  NOT for: Kubernetes, 클라우드 배포 (그건 일반 지식).
+  Docker 컨테이너화 및 docker-compose 구성.
+  Use when: Dockerfile 작성, docker-compose 구성, 컨테이너 최적화, nginx 설정, 이미지 빌드.
+  NOT for: CI/CD 파이프라인 (→ /cicd), 프로덕션 배포 체크리스트 (→ /production-checklist).
 ---
 
-# Docker 스킬
+# Docker
 
-## .dockerignore
+풀스택 프로젝트(BE + FE)의 컨테이너화 가이드.
 
-MUST: 프로젝트 루트에 `.dockerignore` 파일이 존재해야 한다.
+## Stack Detection
 
-```
-.venv/
-__pycache__/
-.git/
-*.pyc
-.env
-.env.*
-node_modules/
-tests/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-```
+프로젝트 파일로 Dockerfile 템플릿 자동 결정:
+- `pyproject.toml` → BE Dockerfile 생성
+- `package.json` → FE Dockerfile 생성
+- 둘 다 → 멀티 서비스 docker-compose 구성
 
-**MUST: `.env` 파일은 반드시 제외한다.** 이미지가 레지스트리에 push될 경우 시크릿이 유출되는 보안 사고로 이어진다. `.env`와 `.env.*` 패턴 모두 명시적으로 제외할 것.
+## BE Dockerfile (Python/FastAPI)
 
-## Dockerfile (FastAPI + Poetry)
+Multi-stage 빌드로 이미지 최소화.
 
 ```dockerfile
-# -- Build --
+# ---- builder ----
 FROM python:3.13-slim AS builder
-RUN pip install poetry
+
+RUN pip install poetry==1.8.* && \
+    poetry config virtualenvs.in-project true
+
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
-RUN poetry config virtualenvs.create false \
-    && poetry install --only main --no-interaction --no-ansi
+RUN poetry install --only main --no-root --no-interaction
 
-# -- Runtime --
+COPY . .
+RUN poetry install --only main --no-interaction
+
+# ---- runtime ----
 FROM python:3.13-slim AS runtime
-WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-COPY app/ ./app/
-COPY migrations/ ./migrations/
-COPY alembic.ini ./
 
-RUN adduser --disabled-password --gecos '' appuser
-USER appuser
+RUN groupadd -r app && useradd -r -g app -d /app -s /sbin/nologin app
+
+WORKDIR /app
+COPY --from=builder /app/.venv .venv
+COPY --from=builder /app .
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+USER app
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-## docker-compose.yml (Development)
+### BE 핵심 원칙
+- **Poetry 설치**: builder 스테이지에서만 (runtime에 불필요)
+- **non-root 사용자**: `app` 사용자로 실행
+- **HEALTHCHECK**: `/health` 엔드포인트 기반
+- **slim 이미지**: alpine 대신 slim (glibc 호환성)
+- **COPY 순서**: `pyproject.toml` → `poetry.lock` → 소스코드 (캐시 최적화)
+
+## FE Dockerfile (Next.js)
+
+3-stage 빌드로 standalone output 활용.
+
+```dockerfile
+# ---- deps ----
+FROM node:20-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# ---- build ----
+FROM node:20-alpine AS build
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm build
+
+# ---- runner ----
+FROM node:20-alpine AS runner
+
+RUN addgroup -S app && adduser -S app -G app
+
+WORKDIR /app
+
+COPY --from=build /app/public ./public
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+
+USER app
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+### FE 핵심 원칙
+- **standalone output**: `next.config.js`에 `output: 'standalone'` 필수
+- **static assets**: `.next/static`과 `public/` 별도 복사
+- **alpine 사용**: Node.js는 glibc 의존성 적음
+- **pnpm**: `corepack enable`로 설치, `--frozen-lockfile` 필수
+- **non-root 사용자**: `app` 사용자로 실행
+
+## docker-compose.yml
+
+### 멀티 서비스 구성
 
 ```yaml
 services:
   app:
-    build: .
-    ports: ["8000:8000"]
-    env_file: .env.local
-    environment:
-      - APP_ENV=local
-      - DATABASE__HOST=db
-      - REDIS__HOST=redis
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file: .env
     depends_on:
-      db: {condition: service_healthy}
-      redis: {condition: service_healthy}
-    volumes: ["./app:/app/app"]
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${FE_PORT:-3000}:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${API_URL:-http://localhost:8000}
+    depends_on:
+      - app
+    networks:
+      - frontend
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: myapp_dev
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports: ["5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/var/lib/redis/data
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
+    restart: unless-stopped
 
-  worker:
-    build: .
-    env_file: .env.local
-    environment:
-      - DATABASE__HOST=db
-      - REDIS__HOST=redis
-    depends_on: [db, redis]
-    command: celery -A app.worker worker --loglevel=info
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+    depends_on:
+      - app
+      - frontend
+    networks:
+      - frontend
+      - backend
+    restart: unless-stopped
 
 volumes:
-  pgdata:
+  postgres_data:
+  redis_data:
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
 ```
 
-## 체크리스트
+### 네트워크 분리
+- **frontend**: nginx ↔ frontend (외부 접근)
+- **backend**: app ↔ db ↔ redis (내부 통신)
+- nginx는 양쪽 네트워크 연결 (리버스 프록시)
 
-- [ ] `.dockerignore` 파일이 존재하고 `.env`, `.env.*`가 제외되어 있는가
-- [ ] `FROM python:3.13-slim` 사용 (Python 3.13+ 필수)
-- [ ] site-packages 경로가 `python3.13`인가
-- [ ] 멀티스테이지 빌드로 빌드/런타임 분리되어 있는가
-- [ ] non-root 유저(`appuser`)로 실행하는가
-- [ ] healthcheck가 DB, Redis 등 의존 서비스에 설정되어 있는가
-- [ ] 레이어 캐싱: `pyproject.toml` + `poetry.lock`을 소스 코드보다 먼저 COPY하는가
-- [ ] 하드코딩된 시크릿이 Dockerfile/compose에 없는가
+### 환경별 Override
 
-## 핵심 규칙
+**docker-compose.dev.yml** (개발):
+```yaml
+services:
+  app:
+    build:
+      target: builder
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - APP_ENV=development
 
-1. **MUST** `.dockerignore`에 `.env`와 `.env.*` 포함 -- 보안 필수
-2. **MUST** 멀티스테이지 빌드 -- 빌드 도구가 런타임 이미지에 포함되면 안 된다
-3. **MUST** non-root 유저 -- 컨테이너 탈출 시 피해 최소화
-4. **MUST** healthcheck -- 오케스트레이션 준비 상태 확인
-5. **MUST** `pyproject.toml` 먼저 COPY -- 레이어 캐싱 활용
-6. **MUST** `python:3.13-slim` 기반 이미지 사용
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: pnpm dev
+    environment:
+      - NODE_ENV=development
+
+  db:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+```
+
+**docker-compose.prod.yml** (프로덕션):
+```yaml
+services:
+  app:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+```
+
+실행 방법:
+```bash
+# 개발
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# 프로덕션
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+## nginx 설정
+
+### 리버스 프록시 + FE→BE 라우팅
+
+```nginx
+upstream backend {
+    server app:8000;
+}
+
+upstream frontend {
+    server frontend:3000;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name example.com;
+
+    # SSL
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # gzip
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml;
+    gzip_min_length 1000;
+
+    # API → Backend
+    location /api/ {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # WebSocket
+    location /ws/ {
+        proxy_pass http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # 나머지 → Frontend
+    location / {
+        proxy_pass http://frontend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # 정적 파일 캐시
+    location /_next/static/ {
+        proxy_pass http://frontend;
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+## .dockerignore
+
+### BE (.dockerignore)
+```
+__pycache__
+*.pyc
+.venv
+.env
+.git
+.mypy_cache
+.ruff_cache
+.pytest_cache
+tests/
+docs/
+*.md
+.github/
+```
+
+### FE (.dockerignore)
+```
+node_modules
+.next
+.env*.local
+.git
+coverage/
+tests/
+*.md
+.github/
+```
+
+## 보안
+
+### 최소 이미지
+- BE: `python:3.13-slim` (alpine은 glibc 호환 이슈)
+- FE: `node:20-alpine` (가벼움 우선)
+- DB: `postgres:16-alpine`
+
+### 시크릿 관리
+- **Build-time**: `ARG`로 전달, 최종 이미지에 포함 안 됨 확인
+- **Runtime**: `.env` 또는 Docker secrets 사용
+- `.env` 파일 절대 이미지에 포함 금지 (`.dockerignore`에 명시)
+
+### 취약점 스캔
+```bash
+# Trivy로 이미지 스캔
+trivy image myapp:latest --severity HIGH,CRITICAL
+
+# CI에서 자동 실행
+trivy image --exit-code 1 --severity HIGH,CRITICAL myapp:latest
+```
+
+## 최적화
+
+### 레이어 캐시 전략
+1. 시스템 의존성 설치 (변경 빈도 낮음)
+2. 패키지 매니저 파일 복사 (`pyproject.toml`, `package.json`)
+3. 의존성 설치
+4. 소스코드 복사 (변경 빈도 높음)
+
+### BuildKit 활용
+```bash
+# BuildKit 활성화
+DOCKER_BUILDKIT=1 docker build .
+
+# 캐시 마운트 (의존성 설치 가속)
+RUN --mount=type=cache,target=/root/.cache/pip poetry install
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install
+```
+
+### 이미지 크기 확인
+```bash
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+docker history myapp:latest
+```

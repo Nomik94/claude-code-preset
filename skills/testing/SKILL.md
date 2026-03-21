@@ -1,20 +1,16 @@
 ---
 name: testing
 description: |
-  프로젝트 테스트 패턴 레퍼런스.
-  Use when: 테스트 작성, 테스트 코드 짜기, 테스트 구조 잡기, 테스트 어떻게 써,
-  conftest 설정, 픽스처 만들기, fixture 구성, db_session 픽스처,
-  도메인 유닛 테스트, 서비스 테스트, mock repository, AsyncMock,
-  통합 테스트, API 테스트, httpx AsyncClient, TestClient,
-  testcontainers, 실제 PostgreSQL 테스트, 테스트 DB,
-  커버리지, coverage 설정, pytest 설정, asyncio_mode,
-  테스트 격리, 트랜잭션 롤백, 테스트별 독립.
-  NOT for: pytest 기본 문법, assert 사용법.
+  Use when 테스트 작성, conftest 설정, 픽스처, 도메인 유닛 테스트,
+  통합 테스트, API 테스트, 커버리지, pytest 설정 관련 작업.
+  NOT for pytest 기본 문법, assert 사용법.
 ---
 
-# Testing Skill
+# Testing 스킬
 
-## Test Pyramid
+---
+
+## 1. 테스트 피라미드
 
 ```
 Unit (domain, no DB)  -->  Fast, pure Python 3.13+
@@ -29,38 +25,26 @@ Integration (API)     -->  Real DB (SQLite or testcontainers)
 E2E                   -->  External services included
 ```
 
-## Test Naming Convention
+비율: Unit (70%) > Integration (20%) > E2E (10%)
 
-MUST follow Conventional Commits style prefix in test docstrings/comments when relevant:
+---
 
-| Prefix | Usage |
-|--------|-------|
-| `test:` | 새 테스트 추가 커밋 |
-| `fix:` | 깨진 테스트 수정 커밋 |
-| `refactor:` | 테스트 구조 개선 커밋 |
-
-Test class/method naming:
-
-```python
-class TestOrder{Action}:           # e.g., TestOrderAddItem
-    def test_{scenario}(self): ... # e.g., test_adds_item_increases_count
-    def test_{condition}_raises(self): ...
-```
-
-## Directory Structure
+## 2. 디렉토리 구조
 
 ```
 tests/
-├── conftest.py              # Shared fixtures (engine, session, client)
+├── conftest.py              # 공유 픽스처 (engine, session, client)
 ├── unit/
-│   ├── domain/              # Pure domain tests (no DB, no mock)
-│   └── application/         # Service tests (mock repo)
+│   ├── domain/              # 순수 도메인 테스트 (no DB, no mock)
+│   └── application/         # 서비스 테스트 (mock repo)
 ├── integration/
-│   └── controllers/         # API tests (real DB)
+│   └── controllers/         # API 테스트 (real DB)
 └── e2e/
 ```
 
-## conftest.py
+---
+
+## 3. conftest.py
 
 ```python
 TEST_DB_URL = "sqlite+aiosqlite:///./test.db"
@@ -90,7 +74,21 @@ async def client(db_session):
     app.dependency_overrides.clear()
 ```
 
-## Domain Unit Test (No DB)
+---
+
+## 4. 테스트 네이밍
+
+```python
+class TestOrder{Action}:           # e.g., TestOrderAddItem
+    def test_{scenario}(self): ... # e.g., test_adds_item_increases_count
+    def test_{condition}_raises(self): ...
+```
+
+패턴: `test_{동작}_{조건}_{결과}`
+
+---
+
+## 5. 도메인 유닛 테스트 (No DB)
 
 ```python
 class TestOrderAddItem:
@@ -110,7 +108,9 @@ class TestOrderAddItem:
         assert isinstance(order.pull_domain_events()[0], OrderItemAddedEvent)
 ```
 
-## Application Service Test (Mock Repo)
+---
+
+## 6. Application Service 테스트 (Mock Repo)
 
 ```python
 @pytest.fixture
@@ -136,7 +136,9 @@ class TestOrderApplicationService:
             await service.get_order(user_id=1, order_id=1)
 ```
 
-## Integration Test (API via controllers/)
+---
+
+## 7. 통합 테스트 (API via controllers/)
 
 ```python
 class TestUsersController:
@@ -153,7 +155,9 @@ class TestUsersController:
         assert resp.status_code == 401
 ```
 
-## testcontainers (Real PostgreSQL)
+---
+
+## 8. testcontainers (Real PostgreSQL)
 
 ```python
 @pytest.fixture(scope="session")
@@ -166,7 +170,9 @@ async def test_engine():
         yield engine
 ```
 
-## pytest Configuration
+---
+
+## 9. pytest 설정
 
 ```toml
 [tool.pytest.ini_options]
@@ -176,25 +182,26 @@ addopts = "-v --tb=short --strict-markers"
 markers = ["slow: marks tests as slow", "integration: marks integration tests"]
 ```
 
-## Key Rules
+---
 
-- MUST use `asyncio_mode = "auto"` -- no manual `@pytest.mark.asyncio` needed
-- MUST isolate each test with transaction rollback
-- MUST NOT import framework modules in domain unit tests
-- MUST use `AsyncMock` for async repository mocks
-- MUST place integration tests under `tests/integration/controllers/`
-- MUST name test files matching controller files: `test_{name}_controller.py`
-- MUST use Python 3.13+ syntax (builtin generics, `X | None`, etc.)
+## 핵심 규칙
 
-## Verification Checklist
+- MUST: `asyncio_mode = "auto"` -- `@pytest.mark.asyncio` 수동 추가 불필요
+- MUST: 각 테스트는 트랜잭션 롤백으로 격리
+- MUST: 도메인 유닛 테스트에 framework 모듈 import 금지
+- MUST: async repository mock에 `AsyncMock` 사용
+- MUST: 통합 테스트는 `tests/integration/controllers/`에 배치
+- MUST: 테스트 파일명은 컨트롤러와 매칭: `test_{name}_controller.py`
+- MUST: Python 3.13+ 문법 (builtin generics, `X | None` 등)
 
-Before declaring tests complete:
+---
 
-- [ ] `poetry run pytest` passes with exit code 0
-- [ ] `poetry run pytest --co -q` shows expected test count
-- [ ] `poetry run ruff check tests/` has no errors
-- [ ] `poetry run mypy tests/` passes (if strict mode enabled for tests)
-- [ ] No hardcoded secrets or credentials in test code
-- [ ] Each test is independent -- no ordering dependency
-- [ ] Domain tests have zero DB/framework imports
-- [ ] Mock objects use `spec=` parameter for type safety
+## 체크리스트
+
+- [ ] `poetry run pytest` exit code 0
+- [ ] `poetry run pytest --co -q` 예상 테스트 수 확인
+- [ ] `poetry run ruff check tests/` 에러 없음
+- [ ] 하드코딩된 시크릿/자격증명 없음
+- [ ] 각 테스트 독립 -- 순서 의존성 없음
+- [ ] 도메인 테스트에 DB/framework import 없음
+- [ ] Mock 객체에 `spec=` 파라미터로 타입 안전성 확보
