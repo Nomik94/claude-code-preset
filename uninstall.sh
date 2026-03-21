@@ -190,7 +190,7 @@ with open('$CLAUDE_DIR/settings.json', 'w') as f:
 else
   # --- Fallback: hardcoded list (no manifest found) ---
 
-  SKILLS=(confidence-check verify checkpoint audit build-fix feature-planner gap-analysis learn note fastapi sqlalchemy testing python-best-practices security-audit react-best-practices web-design-guidelines composition-patterns webapp-testing docker cicd production-checklist)
+  SKILLS=(audit build-fix careful checkpoint cicd composition-patterns confidence-check docker fastapi feature-planner freeze gap-analysis learn new-api new-page note production-checklist python-best-practices react-best-practices security-audit sqlalchemy testing verify web-design-guidelines webapp-testing)
   AGENTS=(planner architect engineer reviewer debugger devops writer)
   HOOKS=(auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh session-summary.py session-lessons.sh)
 

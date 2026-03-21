@@ -196,7 +196,7 @@ if [[ -d "$SCRIPT_DIR/skills" ]]; then
       cp -r "${skill_dir%/}" "$SKILLS_DIR/"
       INSTALLED_SKILLS+=("$skill_name")
       echo -e "  ✓ $skill_name"
-      ((skill_count++))
+      ((skill_count++)) || true
     fi
   done
   echo -e "${GREEN}✓ $skill_count skills installed${NC}"
@@ -213,7 +213,7 @@ if [[ -d "$SCRIPT_DIR/hooks" ]]; then
       hook_name=$(basename "$hook_file")
       INSTALLED_HOOKS+=("$hook_name")
       echo -e "  ✓ ${hook_name%.*}"
-      ((hook_count++))
+      ((hook_count++)) || true
     fi
   done
   echo -e "${GREEN}✓ $hook_count hooks installed${NC}"
@@ -229,6 +229,33 @@ with open(SETTINGS_FILE) as f:
     settings = json.load(f)
 
 hooks = settings.get('hooks', {})
+
+# Clean up legacy hooks from previous versions
+legacy_event_hooks = {
+    'UserPromptSubmit': ['pre-compact-note.sh'],
+    'PreToolUse': ['suggest-compact.sh'],
+    'PreCompact': ['pre-compact-save.sh'],
+}
+legacy_post_tool_use = ['python-lint-check.sh', 'python-type-check.sh', 'python-debug-check.sh', 'python-suppress-check.sh']
+# 이전 설치의 hook도 제거 (재설치 시 절대경로로 다시 등록됨)
+reinstall_cleanup = ['session-summary.py', 'session-lessons.sh', 'todo-continuation.sh',
+                     'auto-format.sh', 'type-check.sh', 'console-log-check.sh', 'convention-check.sh']
+
+def clean_event(event_name, script_names):
+    if event_name in hooks:
+        for entry in hooks[event_name]:
+            entry['hooks'] = [h for h in entry.get('hooks', []) if not any(s in h.get('command', '') for s in script_names)]
+        hooks[event_name] = [e for e in hooks[event_name] if e.get('hooks')]
+        if not hooks[event_name]:
+            del hooks[event_name]
+
+for event, scripts in legacy_event_hooks.items():
+    clean_event(event, scripts)
+
+clean_event('PostToolUse', legacy_post_tool_use + reinstall_cleanup)
+clean_event('SessionEnd', reinstall_cleanup)
+clean_event('SessionStart', reinstall_cleanup)
+clean_event('Stop', reinstall_cleanup)
 
 # Define claude-code-preset hooks (fullstack: BE + FE)
 infra_hook_entries = [
@@ -316,7 +343,7 @@ if [[ -d "$SCRIPT_DIR/agents" ]]; then
       agent_name=$(basename "$agent_file" .md)
       INSTALLED_AGENTS+=("$agent_name")
       echo -e "  ✓ $agent_name"
-      ((agent_count++))
+      ((agent_count++)) || true
     fi
   done
   echo -e "${GREEN}✓ $agent_count agents installed${NC}"
