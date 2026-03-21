@@ -1,7 +1,7 @@
 # Notepad
 
-## Priority Context (500자 제한, 항상 로드)
+## Working Memory
+<!-- 타임스탬프 포함, 7일 후 /note --prune으로 정리 -->
 
-## Working Memory (타임스탬프 포함, 7일 후 정리)
-
-## MANUAL (영구 저장)
+## MANUAL
+<!-- 영구 저장 - 절대 자동 삭제 안 됨 -->

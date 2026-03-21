@@ -127,45 +127,6 @@ if post_tool:
 elif 'PostToolUse' in hooks:
     del hooks['PostToolUse']
 
-# Clean PreToolUse (suggest-compact)
-pre_tool = hooks.get('PreToolUse', [])
-for entry in pre_tool:
-    entry['hooks'] = [
-        h for h in entry.get('hooks', [])
-        if 'suggest-compact.sh' not in h.get('command', '')
-    ]
-pre_tool = [e for e in pre_tool if e.get('hooks')]
-if pre_tool:
-    hooks['PreToolUse'] = pre_tool
-elif 'PreToolUse' in hooks:
-    del hooks['PreToolUse']
-
-# Clean UserPromptSubmit (pre-compact-note)
-user_prompt = hooks.get('UserPromptSubmit', [])
-for entry in user_prompt:
-    entry['hooks'] = [
-        h for h in entry.get('hooks', [])
-        if 'pre-compact-note.sh' not in h.get('command', '')
-    ]
-user_prompt = [e for e in user_prompt if e.get('hooks')]
-if user_prompt:
-    hooks['UserPromptSubmit'] = user_prompt
-elif 'UserPromptSubmit' in hooks:
-    del hooks['UserPromptSubmit']
-
-# Clean PreCompact
-pre_compact = hooks.get('PreCompact', [])
-for entry in pre_compact:
-    entry['hooks'] = [
-        h for h in entry.get('hooks', [])
-        if 'pre-compact-save.sh' not in h.get('command', '')
-    ]
-pre_compact = [e for e in pre_compact if e.get('hooks')]
-if pre_compact:
-    hooks['PreCompact'] = pre_compact
-elif 'PreCompact' in hooks:
-    del hooks['PreCompact']
-
 # Clean SessionStart (session-lessons)
 session_start = hooks.get('SessionStart', [])
 for entry in session_start:
@@ -231,7 +192,7 @@ else
 
   SKILLS=(confidence-check verify checkpoint audit build-fix feature-planner gap-analysis learn note fastapi sqlalchemy testing python-best-practices security-audit react-best-practices web-design-guidelines composition-patterns webapp-testing docker cicd production-checklist)
   AGENTS=(planner architect engineer reviewer debugger devops writer)
-  HOOKS=(auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh pre-compact-save.sh session-summary.py suggest-compact.sh pre-compact-note.sh session-lessons.sh)
+  HOOKS=(auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh session-summary.py session-lessons.sh)
 
   # Remove CLAUDE.md
   if [[ -f "$CLAUDE_DIR/CLAUDE.md" ]]; then

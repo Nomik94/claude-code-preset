@@ -258,47 +258,6 @@ if new_hooks:
         existing.append({'matcher': 'Edit|Write', 'hooks': new_hooks})
     hooks['PostToolUse'] = existing
 
-# PreToolUse hook - suggest /compact at strategic points
-pre_tool = hooks.get('PreToolUse', [])
-suggest_cmd = f'bash {HOOKS_DIR}/suggest-compact.sh'
-pt_commands = set()
-for entry in pre_tool:
-    for h in entry.get('hooks', []):
-        pt_commands.add(h.get('command', ''))
-if suggest_cmd not in pt_commands:
-    pre_tool.append({
-        'matcher': '.*',
-        'hooks': [{'type': 'command', 'command': suggest_cmd, 'timeout': 3000}]
-    })
-    hooks['PreToolUse'] = pre_tool
-
-# UserPromptSubmit hook - intercept /compact and remind to save notes
-user_prompt = hooks.get('UserPromptSubmit', [])
-note_cmd = f'bash {HOOKS_DIR}/pre-compact-note.sh'
-up_commands = set()
-for entry in user_prompt:
-    for h in entry.get('hooks', []):
-        up_commands.add(h.get('command', ''))
-if note_cmd not in up_commands:
-    user_prompt.append({
-        'hooks': [{'type': 'command', 'command': note_cmd, 'timeout': 3000}]
-    })
-    hooks['UserPromptSubmit'] = user_prompt
-
-# PreCompact hook - save state before compaction
-pre_compact = hooks.get('PreCompact', [])
-pre_compact_cmd = f'{HOOKS_DIR}/pre-compact-save.sh'
-pc_commands = set()
-for entry in pre_compact:
-    for h in entry.get('hooks', []):
-        pc_commands.add(h.get('command', ''))
-if pre_compact_cmd not in pc_commands:
-    pre_compact.append({
-        'matcher': 'auto|manual',
-        'hooks': [{'type': 'command', 'command': f'bash {pre_compact_cmd}', 'timeout': 5000}]
-    })
-    hooks['PreCompact'] = pre_compact
-
 # SessionStart hook - remind about learned lessons
 session_start_hooks = hooks.get('SessionStart', [])
 lessons_cmd = f'bash {HOOKS_DIR}/session-lessons.sh'
