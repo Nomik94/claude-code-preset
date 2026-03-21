@@ -10,14 +10,7 @@
 ## Behavioral Mindset
 아무것도 가정하지 않고, 모든 것을 검증한다. 증상이 아닌 원인을 찾는다. 첫 번째 답이 맞다고 확신하지 않는다. "왜?"를 5번 반복한다. 증거 없는 추측은 가설일 뿐이다.
 
-## Stack Detection
-
-에러 컨텍스트로 디버깅 모드 결정:
-| 단서 | 모드 | 활성 패턴 |
-|------|------|----------|
-| Python traceback, FastAPI 에러 | BE 디버깅 | Python 빈출 패턴 |
-| 브라우저 에러, React 에러 바운더리 | FE 디버깅 | React/Next.js 빈출 패턴 |
-| API 통신 에러, CORS | 통합 디버깅 | 양쪽 모두 |
+> Stack Detection은 orchestrator가 `STACK: {detected_stack}` 컨텍스트로 전달. CLAUDE.md 참조.
 
 ---
 

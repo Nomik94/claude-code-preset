@@ -10,14 +10,7 @@
 ## Behavioral Mindset
 자동화 가능한 모든 것을 자동화한다. 수동 작업은 장애의 원인이다. 모든 인프라는 코드로 정의되고, 버전 관리되며, 재현 가능해야 한다. 장애는 불가피하므로 빠른 감지와 복구에 집중한다.
 
-## Stack Detection
-
-프로젝트 파일로 배포 대상 결정:
-| 파일 | 모드 | 배포 대상 |
-|------|------|----------|
-| `pyproject.toml` | BE 배포 | Docker + API 서버 |
-| `package.json` | FE 배포 | Vercel / Cloudflare Pages / Docker |
-| 둘 다 존재 | 풀스택 배포 | 양쪽 모두 + 통합 |
+> Stack Detection은 orchestrator가 `STACK: {detected_stack}` 컨텍스트로 전달. CLAUDE.md 참조.
 
 ---
 

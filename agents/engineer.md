@@ -17,14 +17,7 @@
 - [ ] **API 계약 명확성**: 요청/응답 스키마, 에러 코드가 구현 수준으로 구체적인가?
 - [ ] **테스트 가능성**: 설계 구조가 유닛 테스트/통합 테스트에 적합한가? 모킹이 과도하지 않은가?
 
-## Stack Detection
-
-프로젝트 파일로 구현 모드 자동 결정:
-| 파일 | 모드 | 활성 섹션 |
-|------|------|----------|
-| `pyproject.toml` | BE 모드 | Python 구현 규칙 |
-| `package.json` | FE 모드 | React/Next.js 구현 규칙 |
-| 둘 다 존재 | 풀스택 모드 | 양쪽 모두 활성 |
+> Stack Detection은 orchestrator가 `STACK: {detected_stack}` 컨텍스트로 전달. CLAUDE.md 참조.
 
 ---
 
@@ -44,39 +37,11 @@
 | 비즈니스 규칙 존재 | 도메인 유닛 테스트 필수 + 통합 테스트 |
 | 상태 전이/금액 계산 | 유닛 테스트에서 모든 경로 커버 필수 |
 
-### 레이어 책임 원칙
-| 레이어 | 책임 | 금지 사항 |
-|--------|------|----------|
-| Controller | HTTP <-> Pydantic 변환만 | 비즈니스 로직 직접 실행 |
-| Dependencies | Depends() 팩토리 | 비즈니스 로직 |
-| Application Service | 유스케이스 오케스트레이션 | DB 직접 접근 |
-| Domain Entity | 비즈니스 규칙 강제 (Rich Domain Model) | 프레임워크 import |
-| Domain Repository | Protocol 인터페이스 | 구현 세부사항 |
-| Infra Repository | SQLAlchemy 구현 | 비즈니스 규칙 |
+### 레이어 책임
+> controllers → service → repository → domain. 상세는 `/fastapi` 스킬 참조.
 
-### 설계 판단 기준
-
-**도메인 레이어 도입 여부**:
-| 상황 | 판단 |
-|------|------|
-| CRUD만 | 불필요, Service에서 직접 처리 |
-| 비즈니스 규칙 2개+ | 도메인 레이어 도입 |
-| 상태 전이 존재 | Entity + 상태 머신 필수 |
-| 금액/포인트 계산 | Value Object 필수 |
-
-**DI 패턴 선택**:
-| 규모 | 패턴 |
-|------|------|
-| 소규모 (도메인 3 이하) | `Depends()` |
-| 중규모 (도메인 4-9) | Manual DI + Container |
-| 대규모 (도메인 10+) | Dishka |
-
-**캐싱 전략**:
-| 상황 | 전략 |
-|------|------|
-| 읽기 많고 변경 적음 | TTL 기반 캐시 (`@cache(ttl="10m")`) |
-| 실시간 일관성 필요 | 캐시 사용 안 함 |
-| 쓰기 시 즉시 무효화 필요 | 이벤트 기반 캐시 무효화 |
+### 설계 판단
+설계 판단(도메인 레이어, DI 패턴, 캐싱)은 architect 설계를 따름. 상세는 `/fastapi` 스킬 참조.
 
 ### 성능 패턴
 - `selectinload()`: 관계 데이터 미리 로드 (N+1 방지)
@@ -170,21 +135,8 @@
 
 ---
 
-## 품질 검증 (구현 완료 후)
-
-### BE 검증
-1. `ruff check` + `ruff format --check`
-2. `mypy --strict`
-3. `pytest --cov` (커버리지 확인)
-4. N+1 쿼리 확인 (echo=True)
-5. 보안 체크 (bandit rules)
-
-### FE 검증
-1. `eslint` + `prettier --check`
-2. `tsc --noEmit` (타입 체크)
-3. `vitest run` (유닛/컴포넌트 테스트)
-4. `next build` (빌드 성공 확인)
-5. Lighthouse 성능 점수 확인
+## 품질 검증
+구현 완료 후 `/verify` 스킬이 자동 실행됨.
 
 ## 내부 호출 스킬
 

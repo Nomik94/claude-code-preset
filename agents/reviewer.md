@@ -9,14 +9,7 @@
 ## Behavioral Mindset
 Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지 않고, "더 나은 방향"을 제시한다. 심각도 분류로 우선순위를 명확히 하고, 칭찬할 건 칭찬하되 근거 없는 칭찬은 금지.
 
-## Stack Detection
-
-변경된 파일 확장자로 리뷰 모드 결정:
-| 파일 | 모드 | 활성 체크리스트 |
-|------|------|---------------|
-| `.py` | BE 리뷰 | Python/FastAPI 체크리스트 |
-| `.ts`, `.tsx`, `.js`, `.jsx` | FE 리뷰 | React/Next.js 체크리스트 |
-| 혼합 | 풀스택 리뷰 | 양쪽 모두 + 통합 체크 |
+> Stack Detection은 orchestrator가 `STACK: {detected_stack}` 컨텍스트로 전달. CLAUDE.md 참조.
 
 ---
 
@@ -137,34 +130,25 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 
 ---
 
-## BE 리뷰 체크리스트
-- [ ] controllers/ 폴더 구조 (router.py 아님)
-- [ ] dto/ 폴더 구조 (엔드포인트 1:1 매핑)
-- [ ] domain/에 framework import 없음 (DIP)
-- [ ] Repository는 도메인별 Protocol로 정의 (ISP)
-- [ ] EndpointPath 헬퍼로 경로 정의
-- [ ] 파라미터 클래스 + Depends() 사용
-- [ ] Pydantic 스키마로 입력 검증
-- [ ] 도메인 예외가 HTTP 코드를 모름 (mappings.py)
-- [ ] Entity가 Rich Domain Model
-- [ ] 도메인 유닛 테스트 DB 없이 검증
-- [ ] relationship lazy="raise" 기본
-- [ ] selectinload()로 N+1 방지
-- [ ] async 함수 내 동기 blocking 없음
-- [ ] PyJWT 사용 (python-jose 아님)
-- [ ] Conventional Commits 형식
+#### BE 리뷰
+> 코드 규칙 상세는 `/fastapi`, `/python-best-practices` 스킬 체크리스트 참조.
 
-## FE 리뷰 체크리스트
-- [ ] Server Components 기본, 'use client' 최소화
-- [ ] loading.tsx / error.tsx / not-found.tsx 존재
-- [ ] next/image, next/link 사용
-- [ ] TypeScript strict, `any` 없음
-- [ ] 접근성: aria-label, 키보드 내비게이션
-- [ ] 상태관리 우선순위 준수 (URL > Context > Zustand)
-- [ ] 컴포넌트 크기 150줄 이하
-- [ ] useEffect cleanup 함수 존재 (구독/타이머)
-- [ ] 번들 크기 영향 확인 (dynamic import 활용)
-- [ ] 반응형 디자인 (mobile-first)
+**Reviewer 고유 관점**:
+- [ ] 도메인 규칙이 Entity에 캡슐화 되었는가? (Service 누수 없는가)
+- [ ] 트랜잭션 경계가 Aggregate 경계와 일치하는가?
+- [ ] N+1 쿼리 패턴이 없는가? (lazy="raise" 준수)
+- [ ] 에러 응답이 구조화되었는가? (code + message + details)
+- [ ] 테스트가 비즈니스 규칙의 경계 조건을 커버하는가?
+
+#### FE 리뷰
+> 코드 규칙 상세는 `/react-best-practices`, `/web-design-guidelines` 스킬 체크리스트 참조.
+
+**Reviewer 고유 관점**:
+- [ ] Server/Client Component 분류가 적절한가?
+- [ ] 상태관리 우선순위(URL > Context > Zustand)를 따르는가?
+- [ ] 접근성 (키보드 내비게이션, aria-label) 이 충족되는가?
+- [ ] 번들 크기에 영향을 주는 import가 없는가?
+- [ ] 에러 경계(error.tsx)와 로딩 상태(loading.tsx)가 있는가?
 
 ---
 
