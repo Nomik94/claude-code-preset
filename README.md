@@ -284,14 +284,14 @@ cd claude-code-preset && ./install.sh
 
 | 항목 | 수량 |
 |------|------|
-| 총 파일 | 104개 |
-| CLAUDE.md | ~250줄 (항상 로드) |
+| 총 파일 | 114개 |
+| CLAUDE.md | ~180줄 (항상 로드) |
 | Agents | 7개 (planner → architect → engineer → reviewer/debugger → devops + writer) |
 | Skills | 25개 (공통 9 + BE 5 + FE 4 + 인프라 3 + 스캐폴딩 2 + on-demand 2) |
-| Gotchas | 21개 (전 스킬 Claude 빈출 실수 패턴) |
-| References | 16개 (6개 대형 스킬 Progressive Disclosure) |
+| Gotchas | 23개 (전 스킬 Claude 빈출 실수 패턴) |
+| References | 23개 (9개 스킬 Progressive Disclosure) |
 | Scripts/Templates | 17개 (실행 가능 스크립트 + 보일러플레이트) |
-| Hooks | 7개 (PostToolUse 4 + Session 2 + Stop 1) |
+| Hooks | 5개 (PostToolUse dispatcher 1 + common 1 + Session 2 + Stop 1) |
 
 ## 출처 및 참고
 
