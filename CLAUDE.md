@@ -1,76 +1,94 @@
-# Backend Infrastructure Configuration
+# Fullstack Development Configuration
 
 ## Language
 - **ALWAYS respond in Korean (한글)**
-- Code comments: Korean (한글)
-- Variables/identifiers: English
-- Technical terms: English when common (WebSocket, API, etc.)
+- Code comments: Korean / Variables·identifiers: English / Technical terms: English when common
 
-## Stack
-- Python 3.13+ / FastAPI (async) / SQLAlchemy 2.0 (async)
-- Alembic / Pydantic v2 / pydantic-settings
-- PyJWT + pwdlib (argon2)
-- **Poetry** (mandatory, no pip/uv/requirements.txt)
-- Ruff + mypy --strict / pytest + pytest-asyncio + httpx
-- structlog (JSON prod, console dev) / cashews or redis.asyncio
-- Docker + docker-compose
+## Difficulty Assessment (Step 0)
 
-## Architecture
-- **Domain Layer**: `controllers → application/service → domain/entity → infrastructure/repository`
+모든 작업 시작 전 난이도 판정. 이 판정이 프로토콜 깊이를 결정한다.
+
+| Level | 기준 | 에이전트 흐름 | 스킬 |
+|-------|------|-------------|------|
+| Simple | 1-2 파일, 명확한 변경 | engineer 직접 | verify만 |
+| Medium | 3-5 파일, 설계 필요 | architect(선택) → engineer | confidence-check + verify + audit |
+| Complex | 6+ 파일, 아키텍처 영향 | planner → architect → engineer | 전체 프로토콜 + checkpoint |
+
+- Simple: 즉시 실행. 에이전트 1개.
+- Medium: 설계 검토 후 실행. 에이전트 1-2개.
+- Complex: Phase Gate 강제. 기획→설계→구현→검증→배포 순서 필수.
+
+## Stack Detection
+
+프로젝트 파일로 모드 자동 결정:
+- `pyproject.toml` → **BE 모드** (Python 규칙 활성)
+- `package.json` → **FE 모드** (TypeScript 규칙 활성)
+- 둘 다 존재 → **풀스택 모드** (양쪽 규칙 모두 활성)
+- 둘 다 없음 → **범용 모드**
+
+## Backend Rules (BE 모드 활성 시)
+
+### Stack
+Python 3.13+ / FastAPI (async) / SQLAlchemy 2.0 (async) / Alembic / Pydantic v2 / pydantic-settings
+PyJWT + pwdlib (argon2) / **Poetry** (mandatory, no pip/uv/requirements.txt)
+Ruff + mypy --strict / pytest + pytest-asyncio + httpx / structlog / Docker + docker-compose
+
+### Architecture
+- **Layered**: controllers → service → repository
 - **Folder-First**: controllers/, dto/, exceptions/, constants/는 처음부터 폴더로 생성
 - **DI**: Depends (small) | Manual Container (medium) | Dishka (large)
-- **API Versioning**: `/{client}/v{version}/{domain}/{action}` via EndpointPath helper
-- **Sub-Application**: admin/app/web 분리, 클라이언트별 미들웨어/Swagger
+- **API Versioning**: `/{client}/v{version}/{domain}/{action}` via EndpointPath
+- **lazy="raise"** — relationship 기본값, N+1 컴파일타임 방지
 
-## Core Rules
-1. **Poetry only** — no pip, uv, requirements.txt
-2. **Async first** — all DB operations use AsyncSession
-3. **Domain purity** — domain/ has zero framework imports (no FastAPI, SQLAlchemy, Pydantic)
-4. **Protocol ports** — Repository interfaces use `typing.Protocol`
-5. **Type safety** — mypy strict mode, Ruff comprehensive rules
-6. **Test pyramid** — Unit (domain, no DB) > Integration (API) > E2E
-7. **EndpointPath** — no hardcoded path strings in controllers
-8. **Python 3.13+ 문법 필수** — 아래 Modern Syntax 섹션 준수
-9. **Folder-first** — controllers/, dto/, exceptions/, constants/는 처음부터 폴더
-10. **lazy="raise"** — relationship 기본값, N+1 컴파일타임 방지
-11. **Mapping table** — 도메인 예외→HTTP 변환은 mappings.py 한 곳에서 관리
-
-## Modern Python Syntax (3.13+)
-
-**반드시 최신 문법만 사용. 레거시 패턴 금지.**
+### Modern Python Syntax (3.13+ 필수)
 
 | Legacy (금지) | Modern (필수) |
 |--------------|--------------|
 | `Optional[X]` | `X \| None` |
 | `Union[X, Y]` | `X \| Y` |
 | `List[X]`, `Dict[K,V]`, `Tuple[X,...]`, `Set[X]` | `list[X]`, `dict[K,V]`, `tuple[X,...]`, `set[X]` |
-| `from typing import List, Dict, Tuple, Set, Optional, Union` | builtin 제네릭 사용 |
+| `from typing import List, Dict, Optional, Union` | builtin 제네릭 사용 |
 | `from typing import Sequence` | `from collections.abc import Sequence` |
 | `-> "ClassName"` (self 반환) | `-> Self` (`from typing import Self`) |
 | `class Status(str, Enum)` | `class Status(StrEnum)` |
 | `@dataclass` | `@dataclass(slots=True)` |
-| `@dataclass(frozen=True)` | `@dataclass(frozen=True, slots=True)` |
 
-**유지되는 `typing` imports** (builtin 대체 없음):
-`Generic`, `TypeVar`, `Protocol`, `runtime_checkable`, `Literal`, `Self`, `ClassVar`, `TypeAlias`, `overload`
+**유지되는 typing imports**: `Generic`, `TypeVar`, `Protocol`, `runtime_checkable`, `Literal`, `Self`, `ClassVar`, `TypeAlias`, `overload`
 
-**Pydantic v2 필수**:
+### Pydantic v2 필수
 - `model_config = ConfigDict(...)` (not `class Config:`)
-- `model_dump()` (not `.dict()`)
-- `model_validate()` (not `.parse_obj()`)
-- `field_validator` / `model_validator` (not `@validator`)
+- `model_dump()` / `model_validate()` / `field_validator` / `model_validator`
 
-## Naming
+## Frontend Rules (FE 모드 활성 시)
+
+### Stack
+React 18+ / Next.js 14+ (App Router) / TypeScript strict mode
+**pnpm** (mandatory, no npm/yarn) / Tailwind CSS / shadcn/ui / ESLint + Prettier
+
+### Core Rules
+1. **Server Components 기본**, `'use client'` 최소화
+2. `loading.tsx` / `error.tsx` / `not-found.tsx` 필수
+3. Image → `next/image`, Link → `next/link`
+4. 상태관리: URL state > Context > Zustand (순서대로 검토)
+5. API 호출: Server Actions > Route Handlers > 외부 fetch
+6. CSS: Tailwind 유틸리티 우선, 커스텀 CSS 최소화
+
+## Naming Conventions
+
 | Area | Convention | Example |
 |------|-----------|---------|
-| Variable/Function | snake_case | `get_user_data()` |
-| Class | PascalCase | `UserService` |
-| Constant | SCREAMING_SNAKE | `MAX_PAGE_SIZE` |
-| File | snake_case | `user_service.py` |
-| DB Column/Table | snake_case | `created_at` |
+| Python variable/function | snake_case | `get_user_data()` |
+| Python class | PascalCase | `UserService` |
+| Python/TS constant | SCREAMING_SNAKE | `MAX_PAGE_SIZE` |
+| TS variable/function | camelCase | `getUserData()` |
+| React component | PascalCase | `UserProfile` |
+| DB column/table | snake_case | `created_at` |
 | API JSON | camelCase | `createdAt` |
-| URL Path | kebab-case | `/api/v1/user-stats` |
-| Env Variable | SCREAMING_SNAKE | `POSTGRES_HOST` |
+| URL path | kebab-case | `/api/v1/user-stats` |
+| CSS class | kebab-case | `user-profile-card` |
+| File (Python) | snake_case | `user_service.py` |
+| File (React) | PascalCase (컴포넌트) / camelCase (유틸) | `UserProfile.tsx` / `useAuth.ts` |
+| Env variable | SCREAMING_SNAKE | `POSTGRES_HOST` |
 
 ## Agent Orchestration
 
@@ -81,60 +99,7 @@
 | AskUserQuestion 사용 | 결과를 절대 경로로 보고 |
 | 직접 코드 작성 금지 | 서브에이전트 스폰 금지 |
 
-Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlchemy 2.0/Poetry`
-
-### 서브에이전트 전략
-- 메인 컨텍스트 보호: 조사, 탐색, 병렬 분석은 서브에이전트에 위임
-- 서브에이전트 1개 = 1개 작업 (집중 실행)
-- 복잡한 문제일수록 서브에이전트 적극 투입
-
-## Routing Priority (NON-NEGOTIABLE)
-
-**코드 관련 요청의 라우팅 우선순위. 반드시 이 순서를 따르라.**
-
-```
-사용자 요청 → ① Agent 매칭? → YES → 에이전트 스폰 (에이전트가 내부에서 스킬 호출)
-                              → NO  → ② Skill 직접 매칭? → YES → 스킬 호출
-                                                          → NO  → 직접 처리
-```
-
-**핵심 규칙**:
-- 코드 관련 작업은 **에이전트를 통해서만** 처리. 오케스트레이터(나)가 직접 코드를 작성하지 않는다.
-- 스킬은 **에이전트 내부에서 참조**되는 것이 기본. 사용자가 `/스킬명`으로 직접 호출하거나, 에이전트 매칭이 안 될 때만 직접 호출.
-- "간단하니까 에이전트 없이 하자"는 판단 금지. 키워드 매칭되면 무조건 에이전트 스폰.
-
-### ① Agent Selection (1순위)
-
-| Agent | Skill | Keywords | 강제 |
-|-------|-------|----------|------|
-| engineer | `/engineer` | 설계, 구현, API, DB 스키마, 아키텍처, TDD, 성능, 보안 | MUST |
-| code-reviewer | `/code-review` | 코드 리뷰, PR 리뷰, 리팩토링, 코드 품질, 기술 부채 | MUST |
-| root-cause-analyst | `/root-cause` | 버그 원인, 디버깅, 간헐적 에러, 왜 안 돼, 이상 현상 | MUST |
-| devops-architect | `/devops` | Docker, CI/CD, 배포, 모니터링, 인프라 | MUST |
-| technical-writer | `/docs` | README, API 문서, ADR, 변경 로그 | SHOULD |
-
-- **MUST**: 키워드 매칭 시 에이전트 스폰 없이 직접 응답 금지.
-- **SHOULD**: 사용자에게 "X 에이전트를 실행할까요?" 한 줄 제안 후 진행.
-- **Skip 조건**: 단순 1줄 수정, `--no-agent` 플래그 명시 시에만 생략 가능.
-
-### ② Skill Triggers (2순위 — 에이전트 미매칭 시)
-
-에이전트가 매칭되지 않는 경우에만 직접 호출. 에이전트가 매칭된 경우 아래 스킬은 에이전트 내부에서 알아서 호출됨.
-
-| Trigger | Skill | Keywords | 강제 |
-|---------|-------|----------|------|
-| 구현 전 | `/confidence-check` | 구현, 만들어, 추가해, implement, create, add | MUST |
-| 완료 후 | `/verify` | 완료, 끝, done, finished, PR, 커밋 | MUST |
-| 빌드 에러 | `/build-fix` | error, Build failed, TypeError, ImportError | MUST |
-| Python 리뷰 | `/python-best-practices` | .py + 리뷰, 코드 품질 | MUST |
-| 위험 작업 | `/checkpoint` | 리팩토링, 삭제, 마이그레이션, 구조 변경 | MUST |
-| 해결 후 | `/learn` | 해결, solved, root cause 발견 | SHOULD |
-| 3+ 파일 기능 | `/feature-planner` | 기능 구현, 큰 작업, 여러 파일 | SHOULD |
-| 커밋/PR 전 | `/audit` | 커밋, PR, 배포 | MUST |
-
-- **MUST**: 스킬 호출 없이 진행 불가.
-- **SHOULD**: 사용자에게 "X 스킬을 실행할까요?" 한 줄 제안 후 진행.
-- **Skip 조건**: 단순 오타, 주석, 포맷팅, `--no-check` 플래그 명시 시에만 생략 가능.
+Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 
 ### Model Selection
 | Task | Model | Count |
@@ -143,31 +108,75 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlc
 | 구현, 리뷰 | opus | 1-3 |
 | 아키텍처, 복잡한 추론 | opus | 1-2 |
 
-## Auto-MCP Triggers
-| Condition | MCP |
-|-----------|-----|
-| FastAPI/SQLAlchemy/Pydantic + 구현/사용법 | Context7 |
-| 왜/원인/이상하게/간헐적 + 복잡한 분석 | Sequential |
-| 리네임/참조 찾기/프로젝트 전체 변경 | Serena |
-| E2E/브라우저 테스트/스크린샷 | Playwright |
-| 로그 조회/메트릭/모니터/prod 이슈 | Datadog |
+## Routing Priority (NON-NEGOTIABLE)
 
-조합: 복잡한 버그 → Sequential+Context7 | 아키텍처 설계 → Sequential+Context7 | 대규모 리팩토링 → Serena+Sequential
-예외: `--no-mcp` 시 전체 비활성화, 단순 1줄 변경 → Native
+```
+사용자 요청 → ① Agent 매칭? → YES → 에이전트 스폰 (내부에서 스킬 호출)
+                              → NO  → ② Skill 직접 매칭? → YES → 스킬 호출
+                                                          → NO  → 직접 처리
+```
 
-## Flags
-| Flag | Effect |
-|------|--------|
-| `--think` | ~4K 분석, Sequential |
-| `--think-hard` | ~10K, Sequential + Context7 |
-| `--ultrathink` | ~32K, 전체 MCP |
-| `--brainstorm` | 협업적 요구사항 탐색 |
-| `--orchestrate` | 도구 최적화, 병렬 실행 |
-| `--uc` | 심볼 커뮤니케이션, 토큰 30-50% 감소 |
-| `--no-mcp` | 네이티브만 |
+### ① Agent Selection (1순위)
+
+| Agent | Phase | Keywords | 강제 |
+|-------|-------|----------|------|
+| planner | 기획 | 기획, PRD, 요구사항, 사업성, 비즈니스 | MUST |
+| architect | 설계 | 설계, 아키텍처, 스키마, ERD, 구조 | MUST |
+| engineer | 구현 | 구현, 만들어, 추가해, implement, create | MUST |
+| reviewer | 검증 | 리뷰, 코드 품질, 리팩토링, 기술 부채 | MUST |
+| debugger | 검증 | 버그, 디버깅, 왜 안 돼, 에러, 이상 현상 | MUST |
+| devops | 배포 | Docker, 배포, CI/CD, 인프라, 모니터링 | MUST |
+| writer | 공통 | 문서, README, API 문서, ADR | SHOULD |
+
+- **MUST**: 키워드 매칭 시 에이전트 스폰 없이 직접 응답 금지.
+- **SHOULD**: "X 에이전트를 실행할까요?" 한 줄 제안 후 진행.
+- **Skip 조건**: 단순 1줄 수정, `--no-agent` 명시 시에만 생략.
+
+### ② Skill Triggers (2순위)
+
+| Trigger | Skill | Keywords | 강제 |
+|---------|-------|----------|------|
+| 구현 전 | /confidence-check | 구현, implement | MUST |
+| 완료 후 | /verify | 완료, done, PR | MUST |
+| 빌드 에러 | /build-fix | error, Build failed, TypeError | MUST |
+| 위험 작업 | /checkpoint | 리팩토링, 삭제, 마이그레이션 | MUST |
+| 커밋/PR 전 | /audit | 커밋, PR, 배포 | MUST |
+| 해결 후 | /learn | 해결, solved | SHOULD |
+| 3+ 파일 | /feature-planner | 기능 구현, 여러 파일 | SHOULD |
+
+## Phase Gate
+
+Complex 작업은 이 순서 강제. Medium은 설계→구현→검증. Simple은 구현→검증.
+
+| Phase | Agent | Input | Output |
+|-------|-------|-------|--------|
+| 기획 | planner | 아이디어/요구 | PRD, 요구사항 명세 |
+| 설계 | architect | PRD | 아키텍처 문서, API 설계, DB 스키마 |
+| 구현 | engineer | 설계 문서 | 코드 + 테스트 |
+| 검증 | reviewer + debugger | 코드 | 리뷰 리포트, 버그 수정 |
+| 배포 | devops | 검증된 코드 | Docker, CI/CD, 배포 |
+
+## Safety Rules
+
+### 3+ Fix Rule
+같은 버그 3번 수정 시도 실패 → **즉시 중단**. 아키텍처 재검토. 사용자에게 에스컬레이션.
+
+### Verification Gate
+"완료/수정됨/통과" 선언 전 **반드시** 실제 명령어 실행 + 전체 출력 확인.
+- 금지: "should pass", "probably works", "looks correct"
+- 필수: 실제 pytest/ruff/tsc/eslint 출력, 실제 exit code
+
+### Two-Stage Review (커밋/PR 전)
+1. **Spec Compliance**: 요구사항 대비 확인. Missing AND Excess 모두 체크.
+2. **Code Quality**: Stage 1 통과 후에만. SOLID, 에러 핸들링, 테스트, 보안.
+
+### Base Rules
+- Read before Write/Edit
+- No hardcoded credentials
+- Framework respect: 라이브러리 사용 전 deps 확인
+- Never skip tests/validation to make things work
 
 ## Git Rules
-- 세션 시작: `git status` + `git branch`
 - Feature branch only, never main/master
 - **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
 - `git diff` before staging
@@ -175,57 +184,40 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: Python 3.13+/FastAPI/SQLAlc
 
 ## Context Preservation
 
-컨텍스트 한계 도달 전 능동적 관리. 5단계 자동화 파이프라인.
-
-### 자동화 파이프라인
-1. **SessionStart** `session-lessons.sh`: 세션 시작 시 프로젝트 교훈(memory/) 존재 여부 안내
-2. **PreToolUse** `suggest-compact.sh`: 도구 50회 사용 시 → "/note 저장 후 /compact" 제안 (이후 25회마다 반복)
-3. **UserPromptSubmit** `pre-compact-note.sh`: `/compact` 입력 감지 → 저장 안내 표시
+### 5단계 자동화 파이프라인
+1. **SessionStart** `session-lessons.sh`: memory/ 교훈 존재 여부 안내
+2. **PreToolUse** `suggest-compact.sh`: 도구 50회 → "/note 저장 후 /compact" 제안
+3. **UserPromptSubmit** `pre-compact-note.sh`: `/compact` 감지 → 저장 안내
 4. **PreCompact** `pre-compact-save.sh`: 압축 직전 state snapshot 자동 저장
-5. **SessionEnd** `session-summary.py`: 세션 종료 시 `memory/last-session.md` 자동 생성
+5. **SessionEnd** `session-summary.py`: `memory/last-session.md` 자동 생성
 
-### Notepad (`/note`)
+### Notepad (/note)
 ```
-/note <content>                → Working Memory (타임스탬프 포함)
+/note <content>                → Working Memory (타임스탬프)
 /note --priority <content>     → Priority Context (항상 로드, 500자)
-/note --manual <content>       → MANUAL 섹션 (영구 저장)
-/note --show                   → 전체 내용 표시
-/note --prune                  → 7일+ 항목 자동 정리
+/note --manual <content>       → MANUAL (영구 저장)
 ```
 
-## Safety
+## Auto-MCP Triggers
 
-### 3+ Fix Rule
-같은 버그 3번 수정 시도 실패 → **즉시 중단**. 아키텍처 재검토. 사용자에게 에스컬레이션.
-- 매 수정이 새 문제를 만들면 → 패턴 자체가 잘못됨
-- "한 번만 더" 금지 → STOP 후 근본 원인 재분석
+| Condition | MCP |
+|-----------|-----|
+| FastAPI/SQLAlchemy/Pydantic + 구현 | Context7 |
+| React/Next.js + 구현 | Context7 |
+| 왜/원인/복잡한 분석 | Sequential |
+| E2E/브라우저 테스트 | Playwright |
 
-### Verification Gate
-"완료/수정됨/통과" 선언 전 **반드시** 실제 명령어 실행 + 전체 출력 확인.
-- ❌ "should pass", "probably works", "looks correct"
-- ✅ 실제 `pytest` 출력, 실제 `ruff check` 결과, 실제 exit code
+조합: 복잡한 버그 → Sequential+Context7 | 아키텍처 설계 → Sequential+Context7 | 대규모 리팩토링 → Sequential
+예외: `--no-mcp` 시 비활성화, 단순 1줄 변경 → Native
 
-### Two-Stage Review (커밋/PR 전)
-1. **Spec Compliance**: 코드 직접 읽고 요구사항 대비 확인. Missing AND Excess 모두 체크.
-2. **Code Quality**: Stage 1 통과 후에만 실행. SOLID, 에러 핸들링, 테스트, 보안.
+## Flags
 
-### Base Rules
-- Read before Write/Edit
-- No hardcoded credentials
-- Framework respect: check deps before using libraries
-- Never skip tests/validation to make things work
-- Root cause analysis, not workarounds
-
-## Skills Reference
-
-### Auto-Invoke
-`/confidence-check`, `/verify`, `/build-fix`, `/checkpoint`, `/audit`
-
-### By Domain
-- **FastAPI**: `/fastapi`, `/domain-layer`, `/api-design`, `/middleware`, `/environment`
-- **Data**: `/sqlalchemy`, `/alembic`, `/pydantic-schema`
-- **Quality**: `/testing`, `/error-handling`, `/debugging`, `/production-checklist`, `/audit`, `/python-best-practices`
-- **Workflow**: `/feature-planner`, `/gap-analysis`, `/learn`, `/checkpoint`, `/note`
-- **Security**: `/security-audit`
-- **Infra**: `/docker`, `/cicd`, `/monitoring`
-- **Async**: `/background-tasks`, `/websocket`
+| Flag | Effect |
+|------|--------|
+| `--think` | ~4K 분석, Sequential |
+| `--think-hard` | ~10K, Sequential + Context7 |
+| `--ultrathink` | ~32K, 전체 MCP |
+| `--brainstorm` | 협업적 요구사항 탐색 |
+| `--orchestrate` | 도구 최적화, 병렬 실행 |
+| `--no-mcp` | 네이티브만 |
+| `--no-agent` | 에이전트 스폰 생략 |
