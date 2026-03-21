@@ -39,8 +39,8 @@ fi
 
 echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║         claude-code-preset Installation          ║${NC}"
-echo -e "${CYAN}║   FastAPI Backend Infrastructure Config    ║${NC}"
+echo -e "${CYAN}║       claude-code-preset Installation     ║${NC}"
+echo -e "${CYAN}║    Fullstack Development Configuration    ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -230,12 +230,12 @@ with open(SETTINGS_FILE) as f:
 
 hooks = settings.get('hooks', {})
 
-# Define claude-code-preset hooks
+# Define claude-code-preset hooks (fullstack: BE + FE)
 infra_hook_entries = [
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-lint-check.sh', 'timeout': 10000},
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-type-check.sh', 'timeout': 10000},
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-debug-check.sh', 'timeout': 5000},
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/python-suppress-check.sh', 'timeout': 5000},
+    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/auto-format.sh', 'timeout': 10000},
+    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/type-check.sh', 'timeout': 10000},
+    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/console-log-check.sh', 'timeout': 5000},
+    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/convention-check.sh', 'timeout': 5000},
 ]
 
 # Merge: add claude-code-preset hooks without removing existing ones
@@ -326,6 +326,19 @@ if stop_cmd not in se_commands:
     })
     hooks['SessionEnd'] = session_end_hooks
 
+# Stop hook - continue if todos remain
+stop_hooks = hooks.get('Stop', [])
+todo_cmd = f'bash {HOOKS_DIR}/todo-continuation.sh'
+stop_commands = set()
+for entry in stop_hooks:
+    for h in entry.get('hooks', []):
+        stop_commands.add(h.get('command', ''))
+if todo_cmd not in stop_commands:
+    stop_hooks.append({
+        'hooks': [{'type': 'command', 'command': todo_cmd, 'timeout': 5000}]
+    })
+    hooks['Stop'] = stop_hooks
+
 settings['hooks'] = hooks
 
 with open(SETTINGS_FILE, 'w') as f:
@@ -411,7 +424,7 @@ fi
 echo -e "  ⚙️  settings.json (existing settings preserved)"
 echo -e "  🛠️  $skill_count skills"
 echo -e "  🤖 $agent_count agents"
-echo -e "  🪝 $hook_count hooks (ruff auto-fix, mypy, debug check)"
+echo -e "  🪝 $hook_count hooks (auto-format, type-check, convention-check)"
 echo ""
 if [[ -d "$BACKUP_DIR" ]]; then
   echo -e "  📦 Backup: $BACKUP_DIR"
@@ -419,12 +432,13 @@ if [[ -d "$BACKUP_DIR" ]]; then
 fi
 echo -e "${YELLOW}Next steps:${NC}"
 echo -e "  1. ${CYAN}Restart Claude Code${NC} to apply changes"
-echo -e "  2. Try ${CYAN}/fastapi${NC} to load FastAPI project patterns"
-echo -e "  3. Try ${CYAN}/domain-layer${NC} for DDD entity patterns"
+echo -e "  2. Try ${CYAN}/fastapi${NC} for FastAPI project patterns"
+echo -e "  3. Try ${CYAN}/react-best-practices${NC} for React/Next.js optimization"
 echo -e "  4. Use ${CYAN}--think${NC} for complex analysis"
 echo ""
 echo -e "${YELLOW}Uninstall:${NC}"
 echo -e "  ${CYAN}~/.claude/uninstall-claude-code-preset.sh${NC}"
 echo ""
-echo -e "${BLUE}Stack: Python 3.13+ / FastAPI / SQLAlchemy 2.0 / Poetry${NC}"
+echo -e "${BLUE}BE: Python 3.13+ / FastAPI / SQLAlchemy 2.0 / Poetry${NC}"
+echo -e "${BLUE}FE: React / Next.js / TypeScript / pnpm${NC}"
 echo ""

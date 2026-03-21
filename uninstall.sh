@@ -16,7 +16,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║       claude-code-preset Uninstaller             ║${NC}"
+echo -e "${CYAN}║      claude-code-preset Uninstaller       ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -116,9 +116,10 @@ post_tool = hooks.get('PostToolUse', [])
 for entry in post_tool:
     entry['hooks'] = [
         h for h in entry.get('hooks', [])
-        if 'python-lint-check.sh' not in h.get('command', '')
-        and 'python-type-check.sh' not in h.get('command', '')
-        and 'python-debug-check.sh' not in h.get('command', '')
+        if 'auto-format.sh' not in h.get('command', '')
+        and 'type-check.sh' not in h.get('command', '')
+        and 'console-log-check.sh' not in h.get('command', '')
+        and 'convention-check.sh' not in h.get('command', '')
     ]
 post_tool = [e for e in post_tool if e.get('hooks')]
 if post_tool:
@@ -178,19 +179,31 @@ if session_start:
 elif 'SessionStart' in hooks:
     del hooks['SessionStart']
 
-# Clean SessionEnd (and legacy Stop)
-for event_name in ['SessionEnd', 'Stop']:
-    event_hooks = hooks.get(event_name, [])
-    for entry in event_hooks:
-        entry['hooks'] = [
-            h for h in entry.get('hooks', [])
-            if 'session-summary.py' not in h.get('command', '')
-        ]
-    event_hooks = [e for e in event_hooks if e.get('hooks')]
-    if event_hooks:
-        hooks[event_name] = event_hooks
-    elif event_name in hooks:
-        del hooks[event_name]
+# Clean SessionEnd
+session_end = hooks.get('SessionEnd', [])
+for entry in session_end:
+    entry['hooks'] = [
+        h for h in entry.get('hooks', [])
+        if 'session-summary.py' not in h.get('command', '')
+    ]
+session_end = [e for e in session_end if e.get('hooks')]
+if session_end:
+    hooks['SessionEnd'] = session_end
+elif 'SessionEnd' in hooks:
+    del hooks['SessionEnd']
+
+# Clean Stop (todo-continuation)
+stop_hooks = hooks.get('Stop', [])
+for entry in stop_hooks:
+    entry['hooks'] = [
+        h for h in entry.get('hooks', [])
+        if 'todo-continuation.sh' not in h.get('command', '')
+    ]
+stop_hooks = [e for e in stop_hooks if e.get('hooks')]
+if stop_hooks:
+    hooks['Stop'] = stop_hooks
+elif 'Stop' in hooks:
+    del hooks['Stop']
 
 # Remove Skill(*) from permissions
 perms = settings.get('permissions', {})
@@ -216,9 +229,9 @@ with open('$CLAUDE_DIR/settings.json', 'w') as f:
 else
   # --- Fallback: hardcoded list (no manifest found) ---
 
-  SKILLS=(fastapi domain-layer api-design middleware environment sqlalchemy alembic pydantic-schema testing error-handling debugging production-checklist security-audit monitoring docker cicd background-tasks websocket confidence-check verify build-fix feature-planner gap-analysis learn checkpoint audit note python-best-practices engineer code-review root-cause devops docs)
-  AGENTS=(engineer code-reviewer root-cause-analyst devops-architect technical-writer)
-  HOOKS=(python-lint-check.sh python-type-check.sh python-debug-check.sh pre-compact-save.sh session-summary.py suggest-compact.sh pre-compact-note.sh session-lessons.sh)
+  SKILLS=(confidence-check verify checkpoint audit build-fix feature-planner gap-analysis learn note fastapi sqlalchemy testing python-best-practices security-audit react-best-practices web-design-guidelines composition-patterns webapp-testing docker cicd production-checklist)
+  AGENTS=(planner architect engineer reviewer debugger devops writer)
+  HOOKS=(auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh pre-compact-save.sh session-summary.py suggest-compact.sh pre-compact-note.sh session-lessons.sh)
 
   # Remove CLAUDE.md
   if [[ -f "$CLAUDE_DIR/CLAUDE.md" ]]; then
