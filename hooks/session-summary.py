@@ -17,23 +17,7 @@ def find_transcript():
     path = os.environ.get("CLAUDE_TRANSCRIPT_PATH", "")
     if path and os.path.isfile(path):
         return path
-
-    # Fallback: most recent .jsonl in project directories
-    projects_dir = Path.home() / ".claude" / "projects"
-    if not projects_dir.exists():
-        return None
-
-    latest = None
-    latest_mtime = 0
-    for jsonl in projects_dir.rglob("*.jsonl"):
-        if jsonl.parent.name in ("memory", "backup", "logs"):
-            continue
-        mtime = jsonl.stat().st_mtime
-        if mtime > latest_mtime:
-            latest_mtime = mtime
-            latest = jsonl
-
-    return str(latest) if latest else None
+    return None
 
 
 def parse_transcript(path):

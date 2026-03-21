@@ -1,20 +1,17 @@
 #!/bin/bash
 # 미완료 TODO 작업 계속 진행 — Stop hook
-# 미완료 태스크가 남아있으면 Claude가 작업을 중단하지 않고 계속 진행하도록 강제한다.
-# 무한루프 방지를 위해 최대 반복 횟수를 제한한다.
+# Claude가 미완료 태스크가 있을 때 작업을 계속하도록 강제한다.
+# stdin으로 전달되는 세션 데이터만 사용 (파일 시스템 탐색 제거)
 
-# 상태 저장 디렉토리
+MAX_ITERATIONS=5
 STATE_DIR="${HOME}/.claude/state"
 ITERATION_FILE="${STATE_DIR}/iteration-count.json"
-MAX_ITERATIONS=10
 
-# 상태 디렉토리 생성
 mkdir -p "$STATE_DIR" 2>/dev/null || true
 
 # 현재 반복 횟수 읽기
 read_iteration_count() {
   if [[ -f "$ITERATION_FILE" ]]; then
-    # JSON에서 count 값 추출
     local count
     count=$(grep -o '"count"[[:space:]]*:[[:space:]]*[0-9]*' "$ITERATION_FILE" 2>/dev/null | grep -o '[0-9]*$' || echo "0")
     echo "${count:-0}"
@@ -23,87 +20,36 @@ read_iteration_count() {
   fi
 }
 
-# 반복 횟수 저장
 write_iteration_count() {
-  local count="$1"
   cat > "$ITERATION_FILE" 2>/dev/null << EOF
 {
-  "count": ${count},
+  "count": ${1},
   "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
 }
 
-# 반복 횟수 초기화
-reset_iteration_count() {
-  write_iteration_count 0
-}
-
-# 미완료 태스크 수 집계
-# stdin과 파일 소스를 배타적으로 처리하여 중복 카운팅 방지
-count_pending_tasks() {
-  local pending=0
-  local used_stdin=false
-
-  # stdin에서 pending/in_progress 태스크 패턴 탐지 (우선)
-  # Stop hook은 stdin으로 현재 세션의 태스크 데이터를 받을 수 있음
-  if [[ ! -t 0 ]]; then
-    local stdin_content
-    stdin_content=$(cat 2>/dev/null) || true
-    if [[ -n "$stdin_content" ]]; then
-      local stdin_pending
-      stdin_pending=$(echo "$stdin_content" | grep -cE '"status"[[:space:]]*:[[:space:]]*"(pending|in_progress)"' 2>/dev/null || echo "0")
-      if [[ "$stdin_pending" -gt 0 ]]; then
-        pending=$stdin_pending
-        used_stdin=true
-      fi
-    fi
+# stdin에서 미완료 태스크 감지 (유일한 소스)
+PENDING=0
+if [[ ! -t 0 ]]; then
+  INPUT=$(cat 2>/dev/null) || true
+  if [[ -n "$INPUT" ]]; then
+    PENDING=$(echo "$INPUT" | grep -cE '"status"[[:space:]]*:[[:space:]]*"(pending|in_progress)"' 2>/dev/null || echo "0")
   fi
+fi
 
-  # stdin에서 태스크를 찾지 못한 경우에만 파일 기반 탐색 (배타적 처리)
-  if [[ "$used_stdin" == "false" ]] && [[ -d "${HOME}/.claude/todos" ]]; then
-    for todo_file in "${HOME}/.claude/todos/"*.json; do
-      [[ -f "$todo_file" ]] || continue
-      # status가 completed 또는 cancelled이 아닌 항목 카운트
-      local file_pending
-      file_pending=$(grep -c '"status"' "$todo_file" 2>/dev/null || echo "0")
-      local file_done
-      file_done=$(grep -cE '"status"[[:space:]]*:[[:space:]]*"(completed|cancelled)"' "$todo_file" 2>/dev/null || echo "0")
-      pending=$((pending + file_pending - file_done))
-    done
-  fi
-
-  # 음수 방지
-  if [[ "$pending" -lt 0 ]]; then
-    pending=0
-  fi
-
-  echo "$pending"
-}
-
-# 메인 로직
 CURRENT_COUNT=$(read_iteration_count)
-PENDING_TASKS=$(count_pending_tasks)
 
-# 미완료 태스크가 있고 반복 제한 이내
-if [[ "$PENDING_TASKS" -gt 0 ]] && [[ "$CURRENT_COUNT" -lt "$MAX_ITERATIONS" ]]; then
-  # 반복 횟수 증가
+if [[ "$PENDING" -gt 0 ]] && [[ "$CURRENT_COUNT" -lt "$MAX_ITERATIONS" ]]; then
   NEW_COUNT=$((CURRENT_COUNT + 1))
   write_iteration_count "$NEW_COUNT"
-
-  echo "⚠️ 미완료 태스크 ${PENDING_TASKS}개 남아있습니다. 계속 진행합니다. (${NEW_COUNT}/${MAX_ITERATIONS})" >&2
-
-  # exit 1 → Claude가 작업을 계속하도록 강제
+  echo "⚠️ 미완료 태스크 ${PENDING}개. 계속 진행합니다. (${NEW_COUNT}/${MAX_ITERATIONS})" >&2
   exit 1
 fi
 
-# 모든 태스크 완료 또는 MAX_ITERATIONS 초과
 if [[ "$CURRENT_COUNT" -ge "$MAX_ITERATIONS" ]]; then
-  echo "⚠️ 최대 반복 횟수(${MAX_ITERATIONS})에 도달했습니다. 작업을 종료합니다." >&2
+  echo "⚠️ 최대 반복 횟수(${MAX_ITERATIONS})에 도달. 작업을 종료합니다." >&2
 fi
 
-# 반복 횟수 초기화
-reset_iteration_count
-
-# exit 0 → 정상 종료 허용
+write_iteration_count 0
 exit 0
