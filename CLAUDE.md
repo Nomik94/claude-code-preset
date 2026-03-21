@@ -89,56 +89,34 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 
 ```
 사용자 요청 → ① Agent 매칭? → YES → 에이전트 스폰 (내부에서 스킬 호출)
-                              → NO  → ② Skill 직접 매칭? → YES → 스킬 호출
-                                                          → NO  → 직접 처리
+                              → NO  → ② 유틸리티 스킬? → YES → 직접 호출
+                                                        → NO  → 직접 처리
 ```
 
-### ① Agent Selection (1순위)
+### Agent → Skill 통합 매핑
 
-| Agent | Phase | Keywords | 강제 |
-|-------|-------|----------|------|
-| planner | 기획 | 기획, PRD, 요구사항, 사업성, 비즈니스 | MUST |
-| architect | 설계 | 설계, 아키텍처, 스키마, ERD, 구조 | MUST |
-| engineer | 구현 | 구현, 만들어, 추가해, implement, create | MUST |
-| reviewer | 검증 | 리뷰, 코드 품질, 리팩토링, 기술 부채 | MUST |
-| debugger | 검증 | 버그, 디버깅, 왜 안 돼, 에러, 이상 현상 | MUST |
-| devops | 배포 | Docker, 배포, CI/CD, 인프라, 모니터링 | MUST |
-| writer | 공통 | 문서, README, API 문서, ADR | SHOULD |
+키워드 매칭 시 Agent 스폰. Agent가 Phase에 따라 스킬을 자동/판단 호출. 상세는 각 agent.md 참조.
 
-- **MUST**: 키워드 매칭 시 에이전트 스폰 없이 직접 응답 금지.
-- **SHOULD**: "X 에이전트를 실행할까요?" 한 줄 제안 후 진행.
-- **Skip 조건**: 단순 1줄 수정, `--no-agent` 명시 시에만 생략.
+| Agent | Phase | Keywords | 자동 스킬 | 판단 스킬 |
+|-------|-------|----------|----------|----------|
+| planner | 기획 | 기획, PRD, 요구사항, 비즈니스 | feature-planner, gap-analysis | — |
+| architect | 설계 | 설계, 아키텍처, 스키마, ERD | confidence-check | — |
+| engineer | 구현 | 구현, 만들어, 추가해, implement | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react, testing, security-audit 등 |
+| reviewer | 검증 | 리뷰, 코드 품질, 리팩토링 | audit | python-best-practices, react, security-audit 등 |
+| debugger | 검증 | 버그, 디버깅, 왜 안 돼, 에러 | build-fix, learn | — |
+| devops | 배포 | Docker, 배포, CI/CD, 인프라 | — | docker, cicd, production-checklist |
+| writer | 공통 | 문서, README, API 문서, ADR | — | — |
 
-### ② Skill Routing (2순위)
+- **MUST**(planner~devops): 키워드 매칭 시 에이전트 스폰 없이 직접 응답 금지.
+- **SHOULD**(writer): "writer 에이전트를 실행할까요?" 제안 후 진행.
+- **Skip**: 단순 1줄 수정, `--no-agent` 명시 시에만 생략.
 
-각 Agent가 Phase에 따라 스킬을 자동/판단 호출. 상세는 각 agent.md의 "내부 호출 스킬" 참조.
+**유틸리티** (직접 호출): `/note` · `/learn` · `/careful` · `/freeze`
+**스캐폴딩** (직접 호출 겸용): `/new-api` · `/new-page`
 
-| Agent | 자동 호출 | 판단 호출 |
-|-------|----------|----------|
-| engineer | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react-best-practices, web-design-guidelines, composition-patterns, testing, security-audit, new-api, new-page |
-| reviewer | audit | python-best-practices, react-best-practices, security-audit, web-design-guidelines |
-| debugger | build-fix, learn | — |
-| planner | feature-planner, gap-analysis | — |
-| architect | confidence-check | — |
-| devops | — | docker, cicd, production-checklist |
+### Phase Gate
 
-**유틸리티** (Agent 거치지 않고 직접 호출):
-`/note` · `/learn` · `/careful` · `/freeze`
-
-**스캐폴딩** (직접 호출 겸용):
-`/new-api` · `/new-page`
-
-## Phase Gate
-
-Complex 작업은 이 순서 강제. Medium은 설계→구현→검증. Simple은 구현→검증.
-
-| Phase | Agent | Input | Output |
-|-------|-------|-------|--------|
-| 기획 | planner | 아이디어/요구 | PRD, 요구사항 명세 |
-| 설계 | architect | PRD | 아키텍처 문서, API 설계, DB 스키마 |
-| 구현 | engineer | 설계 문서 | 코드 + 테스트 |
-| 검증 | reviewer + debugger | 코드 | 리뷰 리포트, 버그 수정 |
-| 배포 | devops | 검증된 코드 | Docker, CI/CD, 배포 |
+Complex: 기획→설계→구현→검증→배포 순서 필수. Medium: 설계→구현→검증. Simple: 구현→검증.
 
 ## Safety Rules
 
