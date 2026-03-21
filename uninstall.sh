@@ -192,7 +192,7 @@ else
 
   SKILLS=(audit build-fix careful checkpoint cicd composition-patterns confidence-check docker fastapi feature-planner freeze gap-analysis learn new-api new-page note production-checklist python-best-practices react-best-practices security-audit sqlalchemy testing verify web-design-guidelines webapp-testing)
   AGENTS=(planner architect engineer reviewer debugger devops writer)
-  HOOKS=(auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh session-summary.py session-lessons.sh)
+  HOOKS=(post-tool-use.sh common.sh auto-format.sh type-check.sh console-log-check.sh convention-check.sh todo-continuation.sh session-summary.py session-lessons.sh)
 
   # Remove CLAUDE.md
   if [[ -f "$CLAUDE_DIR/CLAUDE.md" ]]; then

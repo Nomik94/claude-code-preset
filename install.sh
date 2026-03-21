@@ -239,7 +239,8 @@ legacy_event_hooks = {
 legacy_post_tool_use = ['python-lint-check.sh', 'python-type-check.sh', 'python-debug-check.sh', 'python-suppress-check.sh']
 # 이전 설치의 hook도 제거 (재설치 시 절대경로로 다시 등록됨)
 reinstall_cleanup = ['session-summary.py', 'session-lessons.sh', 'todo-continuation.sh',
-                     'auto-format.sh', 'type-check.sh', 'console-log-check.sh', 'convention-check.sh']
+                     'auto-format.sh', 'type-check.sh', 'console-log-check.sh', 'convention-check.sh',
+                     'post-tool-use.sh', 'common.sh']
 
 def clean_event(event_name, script_names):
     if event_name in hooks:
@@ -259,10 +260,7 @@ clean_event('Stop', reinstall_cleanup)
 
 # Define claude-code-preset hooks (fullstack: BE + FE)
 infra_hook_entries = [
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/auto-format.sh', 'timeout': 10000},
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/type-check.sh', 'timeout': 10000},
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/console-log-check.sh', 'timeout': 5000},
-    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/convention-check.sh', 'timeout': 5000},
+    {'type': 'command', 'command': f'CLAUDE_FILE_PATH=\"\$CLAUDE_FILE_PATH\" {HOOKS_DIR}/post-tool-use.sh', 'timeout': 15000},
 ]
 
 # Merge: add claude-code-preset hooks without removing existing ones
