@@ -3,6 +3,8 @@ name: freeze
 description: |
   특정 디렉토리만 수정 허용하여 디버깅 시 실수로 다른 코드를 수정하는 것을 방지합니다.
   허용 디렉토리 외의 파일 수정(Edit/Write)을 차단합니다.
+  Use when: 디버깅, 특정 디렉토리만 수정, 실수 방지.
+  NOT for: 일반 개발, 새 기능 구현.
 hooks:
   - type: PreToolUse
     matcher: Edit|Write

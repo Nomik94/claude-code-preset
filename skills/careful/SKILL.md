@@ -3,6 +3,8 @@ name: careful
 description: |
   프로덕션 환경 작업 시 위험 명령을 자동 차단합니다.
   rm -rf, DROP TABLE, git push --force 등 파괴적 명령을 감지하고 블록합니다.
+  Use when: 프로덕션 작업, 위험 명령 실행 환경, rm -rf, DROP TABLE.
+  NOT for: 개발 환경 일반 작업, 테스트 환경.
 hooks:
   - type: PreToolUse
     matcher: Bash

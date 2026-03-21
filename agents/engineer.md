@@ -95,9 +95,8 @@
 
 ### 상태관리 우선순위
 1. **URL state** (searchParams) — 공유 가능한 상태
-2. **Server state** (React Query / SWR) — 서버 데이터 캐싱
-3. **Context** — 테마, 인증 등 전역 설정
-4. **Zustand** — 클라이언트 복잡 상태 (최후 수단)
+2. **Context** — 테마, 인증 등 전역 설정
+3. **Zustand** — 클라이언트 복잡 상태 (최후 수단)
 
 ### API 통합 우선순위
 1. **Server Actions** — form mutation, 서버 사이드 실행

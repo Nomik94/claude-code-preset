@@ -3,7 +3,7 @@
 Claude Code를 위한 **풀스택 개발 프리셋**.
 Python(FastAPI) 백엔드 + React/Next.js 프론트엔드를 기획부터 배포까지 지원합니다.
 
-clone → `install.sh` 실행만으로 25개 skill, 7개 agent, 7개 hook이 설정됩니다.
+clone → `install.sh` 실행만으로 25개 skill, 7개 agent, 5개 hook이 설정됩니다.
 
 ## What is this?
 
@@ -114,12 +114,10 @@ claude
 │   ├── careful/                       # 위험 명령 차단 (rm -rf, DROP TABLE, force-push)
 │   └── freeze/                        # 특정 디렉토리만 수정 허용
 │
-├── hooks/ (7개)
+├── hooks/ (5개)
 │   │  # PostToolUse (Edit/Write 시 자동)
-│   ├── auto-format.sh                 # Ruff(PY) / Prettier(FE) 자동 포맷
-│   ├── type-check.sh                  # tsc --noEmit (.ts/.tsx)
-│   ├── console-log-check.sh           # print()/console.log() 감지
-│   ├── convention-check.sh            # snake_case(PY) / camelCase(TS) 검사
+│   ├── common.sh                      # 공통 유틸 (파일 검증, 스킵 판단)
+│   ├── post-tool-use.sh               # 통합 dispatcher (포맷, 타입, 디버그, 컨벤션)
 │   │  # Session Lifecycle
 │   ├── session-lessons.sh             # [SessionStart] memory/ 교훈 안내
 │   ├── session-summary.py             # [SessionEnd] last-session.md 생성
@@ -203,7 +201,7 @@ skills/fastapi/
 └── gotchas.md            # Claude가 자주 틀리는 패턴
 ```
 
-모든 21개 스킬에 `gotchas.md`가 포함되어 있습니다.
+모든 23개 스킬에 `gotchas.md`가 포함되어 있습니다.
 
 ## Safety Rules
 
@@ -284,7 +282,7 @@ cd claude-code-preset && ./install.sh
 
 | 항목 | 수량 |
 |------|------|
-| 총 파일 | 114개 |
+| 총 파일 | 113개 |
 | CLAUDE.md | ~180줄 (항상 로드) |
 | Agents | 7개 (planner → architect → engineer → reviewer/debugger → devops + writer) |
 | Skills | 25개 (공통 9 + BE 5 + FE 4 + 인프라 3 + 스캐폴딩 2 + on-demand 2) |
