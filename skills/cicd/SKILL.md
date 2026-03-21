@@ -10,12 +10,7 @@ description: |
 
 풀스택 프로젝트(BE + FE)의 GitHub Actions 기반 CI/CD 파이프라인.
 
-## Stack Detection
-
-프로젝트 파일로 파이프라인 자동 결정:
-- `pyproject.toml` → BE 파이프라인
-- `package.json` → FE 파이프라인
-- 둘 다 → 양쪽 모두 실행
+> Stack Detection: CLAUDE.md 규칙에 따라 자동 결정됨.
 
 ## GitHub Actions 구조
 
@@ -250,21 +245,9 @@ jobs:
           restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}-
 
       - run: pnpm build
-
-  fe-lighthouse:
-    name: "FE: Lighthouse CI"
-    runs-on: ubuntu-latest
-    needs: [fe-build]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-fe
-      - run: pnpm build
-        working-directory: frontend
-      - uses: treosh/lighthouse-ci-action@v12
-        with:
-          configPath: frontend/lighthouserc.json
-          uploadArtifacts: true
 ```
+
+Lighthouse CI 설정 및 Matrix Strategy → `references/advanced-pipelines.md` 참조
 
 ## Quality Gates
 
@@ -296,168 +279,12 @@ Settings → Branches → main:
 
 ## 배포 트리거
 
-### 전략
 | 이벤트 | 대상 | 방식 |
 |--------|------|------|
 | PR 생성/업데이트 | Preview | 자동 (Vercel/Cloudflare) |
 | `main` 브랜치 push | Staging | 자동 배포 |
 | `v*` 태그 push | Production | 수동 승인 후 배포 |
 
-### 스테이징 배포 (자동)
-```yaml
-name: Deploy Staging
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build & Push BE Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          tags: registry.example.com/app-backend:staging
-          cache-from: type=gha
-
-      - name: Deploy to Staging
-        run: |
-          # SSH 또는 클라우드 CLI로 배포
-          echo "Deploying to staging..."
-```
-
-### 프로덕션 배포 (수동 승인)
-```yaml
-name: Deploy Production
-on:
-  push:
-    tags: ["v*"]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://example.com
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build & Push BE Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          tags: |
-            registry.example.com/app-backend:${{ github.ref_name }}
-            registry.example.com/app-backend:latest
-
-      - name: Deploy to Production
-        run: |
-          echo "Deploying ${{ github.ref_name }} to production..."
-```
-
-## Vercel/Cloudflare 배포 (FE)
-
-### Preview Deploy (PR)
-```yaml
-# Vercel이 자동 처리 (GitHub 앱 연동)
-# 또는 수동 설정:
-jobs:
-  preview:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-```
-
-### Production Deploy (main)
-```yaml
-jobs:
-  deploy-fe:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--prod"
-```
-
-## 캐시 전략
-
-### 캐시 대상 및 키
-
-| 대상 | 경로 | 키 |
-|------|------|----|
-| Poetry | `~/.cache/pypoetry`, `.venv` | `poetry-{os}-{hash(poetry.lock)}` |
-| pnpm store | pnpm store path | 자동 (`setup-node` cache 옵션) |
-| Next.js | `.next/cache` | `nextjs-{os}-{hash(pnpm-lock)}-{hash(src)}` |
-| Docker layers | GHA cache | `type=gha` (BuildKit) |
-
-### 캐시 크기 관리
-- GitHub Actions 캐시 제한: 10GB/리포지토리
-- 오래된 캐시 자동 정리: 7일 미사용 시 삭제
-- 캐시 키에 lock 파일 해시 포함 → 의존성 변경 시 자동 갱신
-
-## Matrix Strategy (멀티 버전 테스트)
-
-```yaml
-jobs:
-  test:
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-        node-version: ["20", "22"]
-        os: [ubuntu-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-```
-
-## Lighthouse CI 설정
-
-**`frontend/lighthouserc.json`**:
-```json
-{
-  "ci": {
-    "collect": {
-      "startServerCommand": "pnpm start",
-      "url": ["http://localhost:3000"],
-      "numberOfRuns": 3
-    },
-    "assert": {
-      "assertions": {
-        "categories:performance": ["warn", { "minScore": 0.9 }],
-        "categories:accessibility": ["error", { "minScore": 0.9 }],
-        "categories:best-practices": ["warn", { "minScore": 0.9 }],
-        "categories:seo": ["warn", { "minScore": 0.9 }]
-      }
-    },
-    "upload": {
-      "target": "temporary-public-storage"
-    }
-  }
-}
-```
+배포 YAML 상세 → `references/deployment-strategies.md` 참조
 
 자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.

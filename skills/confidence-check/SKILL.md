@@ -10,12 +10,7 @@ description: |
 
 구현 시작 전 자동 실행. 90% 이상이면 진행, 미만이면 부족한 부분 먼저 해결.
 
-## Stack Detection
-
-프로젝트 파일로 체크리스트 자동 결정:
-- `pyproject.toml` 존재 → BE 항목 활성
-- `package.json` 존재 → FE 항목 활성
-- 둘 다 → 전체 활성
+> Stack Detection: CLAUDE.md 규칙에 따라 자동 결정됨.
 
 ## 체크리스트
 

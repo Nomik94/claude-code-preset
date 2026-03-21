@@ -13,12 +13,7 @@ files:
 
 풀스택 프로젝트(BE + FE)의 프로덕션 배포 전 종합 체크리스트.
 
-## Stack Detection
-
-프로젝트 파일로 체크리스트 자동 결정:
-- `pyproject.toml` → BE 체크리스트 활성
-- `package.json` → FE 체크리스트 활성
-- 둘 다 → 전체 활성
+> Stack Detection: CLAUDE.md 규칙에 따라 자동 결정됨.
 
 ---
 
@@ -50,11 +45,11 @@ files:
 - [ ] Sentry 연동 + DSN 설정 + 릴리스 태깅
 
 ### 보안
+
+> 보안 상세는 `/security-audit` 참조.
+
 - [ ] Rate Limiting 활성화
 - [ ] CORS 허용 도메인 명시 (`*` 금지)
-- [ ] HTTPS 강제
-- [ ] 보안 헤더 (HSTS, X-Content-Type-Options)
-- [ ] JWT 만료 시간 적정
 
 ### 성능
 - [ ] 응답 압축 (GZipMiddleware)

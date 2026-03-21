@@ -145,11 +145,10 @@ DOMAIN_EXCEPTION_MAPPINGS: dict[type[Exception], int] = {
 
 ## 4. 보안 기본
 
-- [ ] SQL Injection 방지 (SQLAlchemy ORM/바인딩 사용)
-- [ ] 하드코딩된 시크릿 없음
-- [ ] 입력 검증 (Pydantic v2)
-- [ ] 의존성 취약점 없음: `poetry run pip-audit`
+> 보안 상세는 `/security-audit` 참조.
+
 - [ ] Ruff 보안 규칙: `poetry run ruff check --select S .`
+- [ ] 의존성 취약점 없음: `poetry run pip-audit`
 
 ---
 

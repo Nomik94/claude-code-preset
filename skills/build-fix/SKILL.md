@@ -18,6 +18,8 @@ description: |
 2. **근본 원인**: 워크어라운드 금지, 실제 원인 수정
 3. **재검증**: 수정 후 반드시 해당 검증 재실행
 
+> Stack Detection: CLAUDE.md 규칙에 따라 자동 결정됨.
+
 ## BE 에러 수정 (pyproject.toml 감지 시)
 
 ### 자동 수정 흐름

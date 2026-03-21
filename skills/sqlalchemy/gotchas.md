@@ -14,31 +14,19 @@
 
 autoflush는 쿼리 실행 전에 pending 변경을 flush하지만, 모든 상황에서 예상대로 동작하지 않는다.
 
-### 3. relationship lazy="select"로 N+1 문제
-❌ relationship 기본값(`lazy="select"`)을 사용하여 루프에서 N+1 쿼리 발생
-→ ✅ `lazy="raise"` 기본값 사용 + 필요한 곳에서 `joinedload`/`selectinload` 명시
-
-`lazy="raise"`는 암묵적 쿼리를 컴파일타임에 차단한다. 명시적 로딩 전략이 강제된다.
-
-### 4. Alembic autogenerate가 못 잡는 변경
+### 3. Alembic autogenerate가 못 잡는 변경
 ❌ `alembic revision --autogenerate`를 실행하면 모든 스키마 변경이 감지될 거라 가정
 → ✅ 인덱스 이름 변경, CHECK 제약조건, 트리거, 함수는 수동으로 마이그레이션 작성
 
 autogenerate는 컬럼 추가/삭제, 테이블 생성 정도만 안정적으로 감지한다. 세부 제약조건은 누락된다.
 
-### 5. 트랜잭션 안에서 외부 API 호출
+### 4. 트랜잭션 안에서 외부 API 호출
 ❌ DB 트랜잭션 내에서 HTTP 요청, 이메일 전송 등 외부 I/O 수행
 → ✅ 외부 API 호출은 트랜잭션 밖에서 수행. 실패 시 보상 트랜잭션 패턴 사용
 
 트랜잭션 내 외부 호출이 타임아웃되면 커넥션이 장시간 점유되어 DB 커넥션 풀이 고갈된다.
 
-### 6. expire_on_commit 미설정으로 접근 에러
-❌ `session.commit()` 후 객체 속성에 접근하면 `MissingGreenlet` 에러
-→ ✅ async session에서 `expire_on_commit=False` 설정 또는 commit 후 `await session.refresh(obj)` 호출
-
-async 환경에서 commit 후 속성 접근 시 암묵적 I/O가 발생하면 에러가 난다.
-
-### 7. 벌크 연산 시 ORM 이벤트 미발동
+### 5. 벌크 연산 시 ORM 이벤트 미발동
 ❌ `session.execute(update(User).where(...).values(...))` 후 ORM 이벤트가 실행될 거라 기대
 → ✅ 벌크 UPDATE/DELETE는 ORM 이벤트를 트리거하지 않음. 필요 시 개별 객체 조작
 

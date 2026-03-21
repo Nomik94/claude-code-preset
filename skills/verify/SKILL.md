@@ -10,12 +10,7 @@ description: |
 
 구현 완료 후 자동 실행하는 7단계 검증.
 
-## Stack Detection
-
-프로젝트 파일로 검증 도구 자동 결정:
-- `pyproject.toml` → BE 도구 사용
-- `package.json` → FE 도구 사용
-- 둘 다 → 양쪽 모두 실행
+> Stack Detection: CLAUDE.md 규칙에 따라 자동 결정됨.
 
 ## 검증 단계
 
@@ -50,10 +45,12 @@ description: |
 
 ### 5. Security
 
+> 보안 상세는 `/security-audit` 참조.
+
 | Stack | 검사 항목 |
 |-------|----------|
 | BE | 하드코딩 시크릿, SQL injection (raw query), `S` 규칙 (`ruff check --select S`) |
-| FE | XSS (dangerouslySetInnerHTML), 하드코딩 API 키, 민감 데이터 클라이언트 노출 |
+| FE | XSS 위험 패턴, 하드코딩 API 키, 민감 데이터 클라이언트 노출 |
 | 공통 | `.env` 파일 커밋 여부, 시크릿 패턴 스캔 |
 
 ### 6. Dependencies

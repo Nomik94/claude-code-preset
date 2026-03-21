@@ -131,11 +131,11 @@ def create_app() -> FastAPI:
 
 ## 5. DTO (Pydantic v2) 핵심 규칙
 
+> Pydantic v2 규칙 상세는 `/python-best-practices` 스킬을 따른다. FastAPI 고유 규칙만 명시.
+
 - MUST: `CamelModel` 명칭 사용 (BaseSchema 금지), 모든 DTO 상속
 - MUST: `ErrorBody` + `FieldError` 에러 응답 형식
-- MUST: `field_validator` / `model_validator` 사용 (`@validator` 금지)
-- MUST: `model_config = ConfigDict(...)` 사용 (`class Config:` 금지)
-- MUST: `model_dump()` / `model_validate()` 사용
+- MUST: `from_domain()` factory 메서드로 도메인 엔티티 → DTO 변환
 
 > 전체 코드 예시는 references/dto-examples.md 참조
 
