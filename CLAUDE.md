@@ -134,6 +134,8 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 
 ### ② Skill Triggers (2순위)
 
+**코어 워크플로우** (자동 트리거):
+
 | Trigger | Skill | Keywords | 강제 |
 |---------|-------|----------|------|
 | 구현 전 | /confidence-check | 구현, implement | MUST |
@@ -143,6 +145,34 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 | 커밋/PR 전 | /audit | 커밋, PR, 배포 | MUST |
 | 해결 후 | /learn | 해결, solved | SHOULD |
 | 3+ 파일 | /feature-planner | 기능 구현, 여러 파일 | SHOULD |
+| 설계 vs 구현 | /gap-analysis | 비교, match rate, 빠진 거 | SHOULD |
+| 메모 저장 | /note | 기억해, remember, 메모 | SHOULD |
+
+**기술 스킬** (BE: pyproject.toml 감지 시 / FE: package.json 감지 시):
+
+| 분류 | Skill | 용도 |
+|------|-------|------|
+| BE | /fastapi | 프로젝트 구조, DI, DTO, 미들웨어 |
+| BE | /sqlalchemy | ORM, Repository, Alembic 마이그레이션 |
+| BE | /testing | conftest, 유닛/통합 테스트 전략 |
+| BE | /python-best-practices | 타입 힌트, 린팅, 에러 핸들링 |
+| BE | /security-audit | JWT, RBAC, OWASP Top 10 |
+| FE | /react-best-practices | 성능 최적화, Server Components |
+| FE | /web-design-guidelines | 접근성, 성능, UX 규칙 |
+| FE | /composition-patterns | Compound Components, Provider 패턴 |
+| FE | /webapp-testing | Playwright E2E 테스트 |
+
+**인프라/스캐폴딩** (키워드 매칭 시):
+
+| Skill | 용도 |
+|-------|------|
+| /docker | Multi-stage Dockerfile, compose |
+| /cicd | GitHub Actions, Quality Gates |
+| /production-checklist | 배포 전 체크리스트 + 모니터링 |
+| /new-api | FastAPI CRUD 보일러플레이트 생성 |
+| /new-page | Next.js 페이지 보일러플레이트 생성 |
+| /careful | 위험 명령 차단 (on-demand hook) |
+| /freeze | 특정 디렉토리만 수정 허용 (on-demand hook) |
 
 ## Phase Gate
 

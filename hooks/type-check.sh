@@ -48,15 +48,17 @@ TSC_OUTPUT=$(cd "$TSCONFIG_DIR" && npx tsc --noEmit --pretty false 2>&1) || true
 
 # 수정된 파일에 해당하는 에러만 필터링
 # tsc 출력 형식: "파일경로(행,열): error TS코드: 메시지"
-# 절대 경로 또는 상대 경로 모두 매칭하기 위해 파일명 기반으로 필터링
-FILE_BASENAME=$(basename "$FILE_PATH")
+# 상대 경로를 우선 매칭하여 동일 파일명의 오탐을 방지한다
 RELATIVE_PATH="${FILE_PATH#"$TSCONFIG_DIR"/}"
 
 FILTERED=""
 while IFS= read -r line; do
-  # 수정된 파일 경로가 포함된 에러 줄만 추출
-  if [[ "$line" == *"$RELATIVE_PATH"* ]] || [[ "$line" == *"$FILE_BASENAME"* ]]; then
-    if [[ "$line" == *": error TS"* ]]; then
+  if [[ "$line" == *": error TS"* ]]; then
+    # 상대 경로로 정확히 매칭 (예: src/components/Button.tsx)
+    if [[ "$line" == *"$RELATIVE_PATH"* ]]; then
+      FILTERED+="$line"$'\n'
+    # 절대 경로로 매칭 (tsc가 절대 경로를 출력하는 경우)
+    elif [[ "$line" == *"$FILE_PATH"* ]]; then
       FILTERED+="$line"$'\n'
     fi
   fi

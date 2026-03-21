@@ -10,7 +10,7 @@ clone → `install.sh` 실행만으로 25개 skill, 7개 agent, 7개 hook이 설
 Claude Code가 풀스택 프로젝트에서 일관된 아키텍처, 코딩 컨벤션, 워크플로우를 따르도록 하는 설정 파일 모음입니다.
 
 **핵심 아이디어**:
-- CLAUDE.md (~220줄)만 항상 로드, 나머지는 **on-demand**
+- CLAUDE.md (~250줄)만 항상 로드, 나머지는 **on-demand**
 - **Stack Detection**: `pyproject.toml` / `package.json` 감지로 BE/FE/풀스택 모드 자동 전환
 - **Difficulty Assessment**: Simple/Medium/Complex 자동 판정 → 프로토콜 깊이 조절
 - **Phase Gate**: 기획 → 설계 → 구현 → 검증 → 배포 풀사이클
@@ -53,7 +53,7 @@ claude
 
 ```
 ~/.claude/
-├── CLAUDE.md                          # Core config (~220줄, 항상 로드)
+├── CLAUDE.md                          # Core config (~250줄, 항상 로드)
 │
 ├── agents/ (7개)
 │   ├── planner                        # 기획: 요구사항 발굴, 비즈니스 패널 토론, PRD
@@ -172,15 +172,47 @@ Complex 작업은 이 순서가 강제됩니다:
 | **devops** | 배포 | Docker, 배포, CI/CD, 인프라, 모니터링 |
 | **writer** | 공통 | 문서, README, API 문서, ADR |
 
-### Auto-Invoke Skills
+### Skills (25개)
 
-| Trigger | Skill | 동작 |
-|---------|-------|------|
-| 구현 전 | `/confidence-check` | 신뢰도 ≥90% 확인 |
-| 완료 후 | `/verify` | 7단계 검증 (lint, type, test, security 등) |
-| 빌드 에러 | `/build-fix` | 최소 변경 자동 수정 |
-| 위험 작업 | `/checkpoint` | git 롤백 포인트 생성 |
-| 커밋/PR 전 | `/audit` | 프로젝트 규칙 위반 검사 |
+**코어 워크플로우** (자동 트리거):
+
+| Trigger | Skill | 동작 | 강제 |
+|---------|-------|------|------|
+| 구현 전 | `/confidence-check` | 신뢰도 ≥90% 확인 | MUST |
+| 완료 후 | `/verify` | 7단계 검증 (lint, type, test, security 등) | MUST |
+| 빌드 에러 | `/build-fix` | 최소 변경 자동 수정 | MUST |
+| 위험 작업 | `/checkpoint` | git 롤백 포인트 생성 | MUST |
+| 커밋/PR 전 | `/audit` | 프로젝트 규칙 위반 검사 | MUST |
+| 해결 후 | `/learn` | 디버깅 인사이트 영구 저장 | SHOULD |
+| 3+ 파일 | `/feature-planner` | Phase 기반 기능 계획 분해 | SHOULD |
+| 설계 vs 구현 | `/gap-analysis` | Match Rate 산출 | SHOULD |
+| 메모 저장 | `/note` | 세션 메모 시스템 | SHOULD |
+
+**기술 스킬** (Stack Detection 기반):
+
+| 분류 | Skill | 용도 |
+|------|-------|------|
+| BE | `/fastapi` | 프로젝트 구조, DI, DTO, 미들웨어 |
+| BE | `/sqlalchemy` | ORM, Repository, Alembic 마이그레이션 |
+| BE | `/testing` | conftest, 유닛/통합 테스트 전략 |
+| BE | `/python-best-practices` | 타입 힌트, 린팅, 에러 핸들링 |
+| BE | `/security-audit` | JWT, RBAC, OWASP Top 10 |
+| FE | `/react-best-practices` | 성능 최적화, Server Components |
+| FE | `/web-design-guidelines` | 접근성, 성능, UX 규칙 |
+| FE | `/composition-patterns` | Compound Components, Provider 패턴 |
+| FE | `/webapp-testing` | Playwright E2E 테스트 |
+
+**인프라/스캐폴딩/On-demand**:
+
+| Skill | 용도 |
+|-------|------|
+| `/docker` | Multi-stage Dockerfile, compose |
+| `/cicd` | GitHub Actions, Quality Gates |
+| `/production-checklist` | 배포 전 체크리스트 + 모니터링 |
+| `/new-api` | FastAPI CRUD 보일러플레이트 생성 |
+| `/new-page` | Next.js 페이지 보일러플레이트 생성 |
+| `/careful` | 위험 명령 차단 (on-demand hook) |
+| `/freeze` | 특정 디렉토리만 수정 허용 (on-demand hook) |
 
 ## Progressive Disclosure
 
@@ -198,24 +230,6 @@ skills/fastapi/
 ```
 
 모든 21개 스킬에 `gotchas.md`가 포함되어 있습니다.
-
-## On-demand Hooks
-
-스킬 호출 시에만 활성화되는 세션 한정 hooks:
-
-| 스킬 | 동작 |
-|------|------|
-| `/careful` | 위험 명령 차단 (`rm -rf`, `DROP TABLE`, `git push --force` 등) |
-| `/freeze` | 지정 디렉토리만 수정 허용 (디버깅 시 다른 코드 실수 방지) |
-
-## Code Scaffolding
-
-보일러플레이트 생성 스킬:
-
-| 스킬 | 생성 파일 |
-|------|----------|
-| `/new-api` | controller, dto, service, repository, test (FastAPI CRUD) |
-| `/new-page` | page, loading, error, layout (Next.js App Router) |
 
 ## Safety Rules
 
@@ -255,19 +269,36 @@ cd claude-code-preset && ./install.sh
 
 기존 설정은 `~/.claude/backup-{timestamp}/`에 자동 백업됩니다.
 
-### MCP 서버 설치
+### MCP 서버 & Plugin 설치
+
+`install.sh`와 별도로 실행 가능합니다.
 
 ```bash
-./mcp-setup.sh          # 대화형 선택
-./mcp-setup.sh --all    # 전체 설치
-./mcp-setup.sh --core   # 핵심만 (context7 + sequential-thinking)
+./mcp-setup.sh           # 대화형 선택 (현재 상태 확인 → 개별 선택)
+./mcp-setup.sh --all     # MCP 전체 + Plugin 설치
+./mcp-setup.sh --core    # Core만 (context7 + sequential-thinking)
+./mcp-setup.sh --list    # 설치 상태만 확인
 ```
 
-| Server | Purpose | 필수 |
-|--------|---------|------|
-| **context7** | 라이브러리 문서 조회 | 권장 |
-| **sequential-thinking** | 복잡한 분석, 다단계 추론 | 권장 |
-| **playwright** | 브라우저 자동화, E2E 테스트 | 선택 |
+#### MCP Servers
+
+| Server | 패키지 | 용도 | 분류 |
+|--------|--------|------|------|
+| **context7** | `@upstash/context7-mcp` | 라이브러리 최신 문서/코드 예제 조회 | Core |
+| **sequential-thinking** | `@modelcontextprotocol/server-sequential-thinking` | 복잡한 문제 단계별 분석, 아키텍처 설계 | Core |
+| **playwright** | `@playwright/mcp` | 브라우저 자동화, E2E 테스트, 스크린샷 | Recommended |
+| **github** | `@modelcontextprotocol/server-github` | PR/Issue/Review 관리, 코드 검색 | Recommended |
+| **taskmaster** | `task-master-ai` | AI 프로젝트 플래닝, PRD → 태스크 분해 | Recommended |
+
+> `github` MCP는 `GITHUB_PERSONAL_ACCESS_TOKEN`이 필요합니다. `gh auth login` 후 자동 추출됩니다.
+
+#### Plugin
+
+| Plugin | 마켓플레이스 | 용도 |
+|--------|-------------|------|
+| **superpowers** | `obra/superpowers-marketplace` | TDD, 브레인스토밍, 디버깅, 플래닝, 코드 리뷰 등 고급 워크플로우 |
+
+> 자세한 가이드: [docs/mcp-and-plugins.md](docs/mcp-and-plugins.md)
 
 ## Uninstall
 
@@ -279,13 +310,13 @@ cd claude-code-preset && ./install.sh
 
 | 항목 | 수량 |
 |------|------|
-| 총 파일 | 103개 |
-| CLAUDE.md | ~220줄 (항상 로드) |
+| 총 파일 | 104개 |
+| CLAUDE.md | ~250줄 (항상 로드) |
 | Agents | 7개 (planner → architect → engineer → reviewer/debugger → devops + writer) |
 | Skills | 25개 (공통 9 + BE 5 + FE 4 + 인프라 3 + 스캐폴딩 2 + on-demand 2) |
 | Gotchas | 21개 (전 스킬 Claude 빈출 실수 패턴) |
 | References | 16개 (6개 대형 스킬 Progressive Disclosure) |
-| Scripts/Templates | 12개 (실행 가능 스크립트 + 보일러플레이트) |
+| Scripts/Templates | 17개 (실행 가능 스크립트 + 보일러플레이트) |
 | Hooks | 7개 (PostToolUse 4 + Session 2 + Stop 1) |
 
 ## 출처 및 참고

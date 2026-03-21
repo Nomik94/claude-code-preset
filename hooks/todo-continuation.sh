@@ -40,11 +40,28 @@ reset_iteration_count() {
 }
 
 # 미완료 태스크 수 집계
+# stdin과 파일 소스를 배타적으로 처리하여 중복 카운팅 방지
 count_pending_tasks() {
   local pending=0
+  local used_stdin=false
 
-  # ~/.claude/todos/*.json에서 미완료 항목 확인
-  if [[ -d "${HOME}/.claude/todos" ]]; then
+  # stdin에서 pending/in_progress 태스크 패턴 탐지 (우선)
+  # Stop hook은 stdin으로 현재 세션의 태스크 데이터를 받을 수 있음
+  if [[ ! -t 0 ]]; then
+    local stdin_content
+    stdin_content=$(cat 2>/dev/null) || true
+    if [[ -n "$stdin_content" ]]; then
+      local stdin_pending
+      stdin_pending=$(echo "$stdin_content" | grep -cE '"status"[[:space:]]*:[[:space:]]*"(pending|in_progress)"' 2>/dev/null || echo "0")
+      if [[ "$stdin_pending" -gt 0 ]]; then
+        pending=$stdin_pending
+        used_stdin=true
+      fi
+    fi
+  fi
+
+  # stdin에서 태스크를 찾지 못한 경우에만 파일 기반 탐색 (배타적 처리)
+  if [[ "$used_stdin" == "false" ]] && [[ -d "${HOME}/.claude/todos" ]]; then
     for todo_file in "${HOME}/.claude/todos/"*.json; do
       [[ -f "$todo_file" ]] || continue
       # status가 completed 또는 cancelled이 아닌 항목 카운트
@@ -54,18 +71,6 @@ count_pending_tasks() {
       file_done=$(grep -cE '"status"[[:space:]]*:[[:space:]]*"(completed|cancelled)"' "$todo_file" 2>/dev/null || echo "0")
       pending=$((pending + file_pending - file_done))
     done
-  fi
-
-  # stdin에서 pending/in_progress 태스크 패턴 탐지
-  # Stop hook은 stdin으로 데이터를 받을 수 있음
-  if [[ ! -t 0 ]]; then
-    local stdin_content
-    stdin_content=$(cat 2>/dev/null) || true
-    if [[ -n "$stdin_content" ]]; then
-      local stdin_pending
-      stdin_pending=$(echo "$stdin_content" | grep -cE '"status"[[:space:]]*:[[:space:]]*"(pending|in_progress)"' 2>/dev/null || echo "0")
-      pending=$((pending + stdin_pending))
-    fi
   fi
 
   # 음수 방지
