@@ -3,7 +3,7 @@ name: python-best-practices
 description: |
   Use when Python 코드 품질 분석, 타입 힌트 검증, 린팅, 에러 핸들링,
   예외 계층 설계, 의존성 점검, 보안 기본 점검 관련 작업.
-  NOT for 아키텍처 리뷰 (/code-review), 보안 전문 분석 (/security-audit).
+  NOT for 아키텍처 리뷰 (reviewer 에이전트), 보안 전문 분석 (/security-audit).
 argument-hint: <분석 대상 경로 또는 --quick/--security/--deps>
 ---
 

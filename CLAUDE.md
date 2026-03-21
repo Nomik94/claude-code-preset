@@ -101,8 +101,8 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 |-------|-------|----------|----------|----------|
 | planner | 기획 | 기획, PRD, 요구사항, 비즈니스 | feature-planner, gap-analysis | — |
 | architect | 설계 | 설계, 아키텍처, 스키마, ERD | confidence-check | — |
-| engineer | 구현 | 구현, 만들어, 추가해, implement | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react, testing, security-audit 등 |
-| reviewer | 검증 | 리뷰, 코드 품질, 리팩토링 | audit | python-best-practices, react, security-audit 등 |
+| engineer | 구현 | 구현, 만들어, 추가해, implement | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react-best-practices, testing, security-audit 등 |
+| reviewer | 검증 | 리뷰, 코드 품질, 리팩토링 | audit | python-best-practices, react-best-practices, security-audit 등 |
 | debugger | 검증 | 버그, 디버깅, 왜 안 돼, 에러 | build-fix, learn | — |
 | devops | 배포 | Docker, 배포, CI/CD, 인프라 | — | docker, cicd, production-checklist |
 | writer | 공통 | 문서, README, API 문서, ADR | — | — |
