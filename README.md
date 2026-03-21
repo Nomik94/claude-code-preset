@@ -174,45 +174,19 @@ Complex 작업은 이 순서가 강제됩니다:
 
 ### Skills (25개)
 
-**코어 워크플로우** (자동 트리거):
+각 Agent가 Phase에 따라 내부 스킬을 자동/판단 호출합니다. 상세는 각 agent.md 참조.
 
-| Trigger | Skill | 동작 | 강제 |
-|---------|-------|------|------|
-| 구현 전 | `/confidence-check` | 신뢰도 ≥90% 확인 | MUST |
-| 완료 후 | `/verify` | 7단계 검증 (lint, type, test, security 등) | MUST |
-| 빌드 에러 | `/build-fix` | 최소 변경 자동 수정 | MUST |
-| 위험 작업 | `/checkpoint` | git 롤백 포인트 생성 | MUST |
-| 커밋/PR 전 | `/audit` | 프로젝트 규칙 위반 검사 | MUST |
-| 해결 후 | `/learn` | 디버깅 인사이트 영구 저장 | SHOULD |
-| 3+ 파일 | `/feature-planner` | Phase 기반 기능 계획 분해 | SHOULD |
-| 설계 vs 구현 | `/gap-analysis` | Match Rate 산출 | SHOULD |
-| 메모 저장 | `/note` | 세션 메모 시스템 | SHOULD |
+| Agent | 자동 호출 | 판단 호출 |
+|-------|----------|----------|
+| **engineer** | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react, testing, security-audit 등 |
+| **reviewer** | audit | python-best-practices, react, security-audit, web-design-guidelines |
+| **debugger** | build-fix, learn | — |
+| **planner** | feature-planner, gap-analysis | — |
+| **architect** | confidence-check | — |
+| **devops** | — | docker, cicd, production-checklist |
 
-**기술 스킬** (Stack Detection 기반):
-
-| 분류 | Skill | 용도 |
-|------|-------|------|
-| BE | `/fastapi` | 프로젝트 구조, DI, DTO, 미들웨어 |
-| BE | `/sqlalchemy` | ORM, Repository, Alembic 마이그레이션 |
-| BE | `/testing` | conftest, 유닛/통합 테스트 전략 |
-| BE | `/python-best-practices` | 타입 힌트, 린팅, 에러 핸들링 |
-| BE | `/security-audit` | JWT, RBAC, OWASP Top 10 |
-| FE | `/react-best-practices` | 성능 최적화, Server Components |
-| FE | `/web-design-guidelines` | 접근성, 성능, UX 규칙 |
-| FE | `/composition-patterns` | Compound Components, Provider 패턴 |
-| FE | `/webapp-testing` | Playwright E2E 테스트 |
-
-**인프라/스캐폴딩/On-demand**:
-
-| Skill | 용도 |
-|-------|------|
-| `/docker` | Multi-stage Dockerfile, compose |
-| `/cicd` | GitHub Actions, Quality Gates |
-| `/production-checklist` | 배포 전 체크리스트 + 모니터링 |
-| `/new-api` | FastAPI CRUD 보일러플레이트 생성 |
-| `/new-page` | Next.js 페이지 보일러플레이트 생성 |
-| `/careful` | 위험 명령 차단 (on-demand hook) |
-| `/freeze` | 특정 디렉토리만 수정 허용 (on-demand hook) |
+**유틸리티** (직접 호출): `/note` · `/learn` · `/careful` · `/freeze`
+**스캐폴딩** (직접 호출): `/new-api` · `/new-page`
 
 ## Progressive Disclosure
 

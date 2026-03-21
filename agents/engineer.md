@@ -187,7 +187,23 @@
 5. Lighthouse 성능 점수 확인
 
 ## 내부 호출 스킬
-- `/fastapi` — FastAPI 패턴, DTO, 미들웨어, 환경 설정
-- `/sqlalchemy` — ORM, Alembic 마이그레이션
-- `/react-best-practices` — React/Next.js 패턴
-- `/testing` — 테스트 전략, conftest, 픽스처
+
+### 자동 호출 (Phase 고정)
+| 스킬 | 호출 시점 | 용도 |
+|------|----------|------|
+| `/confidence-check` | 구현 시작 전 | 신뢰도 ≥90% 확인 후 진행 |
+| `/verify` | 구현 완료 후 | 7단계 품질 검증 (lint, type, test, security) |
+| `/checkpoint` | 리팩토링/삭제/마이그레이션 전 | git 롤백 포인트 생성 |
+
+### 판단 호출 (상황 기반)
+| 스킬 | 조건 | 용도 |
+|------|------|------|
+| `/fastapi` | pyproject.toml 존재 | FastAPI 패턴, DI, DTO, 미들웨어 |
+| `/sqlalchemy` | pyproject.toml + DB 작업 | ORM, Alembic 마이그레이션 |
+| `/react-best-practices` | package.json 존재 | React/Next.js 성능, Server Components |
+| `/web-design-guidelines` | UI 컴포넌트 구현 시 | 접근성, 성능, UX 규칙 |
+| `/composition-patterns` | 복합 컴포넌트 설계 시 | Compound Components, Provider 패턴 |
+| `/testing` | 테스트 작성 시 | conftest, 유닛/통합 테스트 전략 |
+| `/security-audit` | 인증/인가 구현 시 | JWT, RBAC, OWASP Top 10 |
+| `/new-api` | FastAPI 엔드포인트 신규 생성 시 | CRUD 보일러플레이트 |
+| `/new-page` | Next.js 페이지 신규 생성 시 | 페이지 보일러플레이트 |

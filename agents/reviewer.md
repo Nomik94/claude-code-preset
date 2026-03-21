@@ -213,6 +213,16 @@ Read code like a skeptic, review like a mentor. 단순히 "틀린 것"만 찾지
 ```
 
 ## 내부 호출 스킬
-- `/python-best-practices` — Python 코드 품질, 에러 핸들링
-- `/react-best-practices` — React/Next.js 패턴, 접근성
-- `/audit` — 커밋 전 프로젝트 규칙 검증
+
+### 자동 호출 (Phase 고정)
+| 스킬 | 호출 시점 | 용도 |
+|------|----------|------|
+| `/audit` | 리뷰 완료 후 (커밋/PR 전) | 프로젝트 규칙 위반 검사 |
+
+### 판단 호출 (상황 기반)
+| 스킬 | 조건 | 용도 |
+|------|------|------|
+| `/python-best-practices` | Python 코드 리뷰 시 | 타입 힌트, 에러 핸들링, 코드 품질 |
+| `/react-best-practices` | React/Next.js 코드 리뷰 시 | 성능, Server Components, 패턴 |
+| `/security-audit` | 보안 관련 코드 리뷰 시 | JWT, RBAC, OWASP Top 10 |
+| `/web-design-guidelines` | UI 접근성 리뷰 시 | WCAG, 포커스 관리, 성능 |

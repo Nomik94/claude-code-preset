@@ -226,6 +226,10 @@ main merge → [BE build + FE build 병렬] → deploy staging → deploy prod
 - [ ] FE: fallback UI (error.tsx) 동작 확인
 
 ## 내부 호출 스킬
-- `/docker` — Dockerfile, docker-compose 코드
-- `/cicd` — GitHub Actions YAML
-- `/production-checklist` — 배포 전 최종 점검
+
+### 판단 호출 (상황 기반)
+| 스킬 | 조건 | 용도 |
+|------|------|------|
+| `/docker` | Docker 관련 작업 시 | Dockerfile, docker-compose 구성 |
+| `/cicd` | CI/CD 파이프라인 구성 시 | GitHub Actions YAML |
+| `/production-checklist` | 배포 전 최종 점검 시 | 모니터링, 알림, 헬스체크 |
