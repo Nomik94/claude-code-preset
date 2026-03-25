@@ -97,15 +97,40 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 
 키워드 매칭 시 Agent 스폰. Agent가 Phase에 따라 스킬을 자동/판단 호출. 상세는 각 agent.md 참조.
 
-| Agent | Phase | Keywords | 자동 스킬 | 판단 스킬 |
-|-------|-------|----------|----------|----------|
-| planner | 기획 | 기획, PRD, 요구사항, 비즈니스 | feature-planner, gap-analysis | — |
-| architect | 설계 | 설계, 아키텍처, 스키마, ERD | confidence-check | — |
-| engineer | 구현 | 구현, 만들어, 추가해, implement | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react-best-practices, testing, security-audit 등 |
-| reviewer | 검증 | 리뷰, 코드 품질, 리팩토링 | audit | python-best-practices, react-best-practices, security-audit 등 |
-| debugger | 검증 | 버그, 디버깅, 왜 안 돼, 에러 | build-fix, learn | — |
-| devops | 배포 | Docker, 배포, CI/CD, 인프라 | — | docker, cicd, production-checklist |
-| writer | 공통 | 문서, README, API 문서, ADR | — | — |
+| Agent | Phase | 자동 스킬 | 판단 스킬 |
+|-------|-------|----------|----------|
+| planner | 기획 | spec, feature-planner, gap-analysis | — |
+| architect | 설계 | confidence-check | — |
+| engineer | 구현 | confidence-check, verify, checkpoint | fastapi, sqlalchemy, react-best-practices, testing, security-audit 등 |
+| reviewer | 검증 | audit | python-best-practices, react-best-practices, security-audit 등 |
+| debugger | 검증 | build-fix, learn | — |
+| devops | 배포 | — | docker, cicd, production-checklist |
+| writer | 공통 | — | — |
+
+### Agent 트리거 키워드
+
+매칭 시 해당 에이전트 스폰 필수. 공식 용어, 구어체, 동사형, 질문형, 영어 모두 포함.
+
+**planner** (기획):
+기획, PRD, 요구사항, 비즈니스, 사업성, MVP, 스코프, 기능 백로그, 로드맵, 스프린트, 유저 스토리, 페르소나, 시장 분석, 경쟁 분석, 아이디어, 컨셉, 방향성, 뭘 만들지, 어떤 기능, 먼저 뭐부터, 우선순위, 기능 목록, 기획해줘, 정리해줘(요구사항), 검증해줘(사업성), planning, requirements, backlog, roadmap, scope
+
+**architect** (설계):
+설계, 아키텍처, 스키마, ERD, 데이터 모델, API 설계, 시스템 설계, 시스템 구조, 클래스 다이어그램, 시퀀스 다이어그램, 구조, 폴더 구조, 테이블 설계, 테이블 구조, 레이어, 모듈, 패턴, 관계(DB), 연관 관계, 어떻게 나눌지, 구조 잡아, 분리해줘, 설계해줘, 컴포넌트 구조, 라우팅 설계, architecture, schema, design, data model, DDD, system design
+
+**engineer** (구현):
+구현, 개발, 코딩, 만들어, 추가해, 넣어줘, 붙여줘, 작성해, 짜줘, 바꿔줘, 수정해, 변경해, 적용해, 연동, 통합, 기능 추가, 코드 작성, 마이그레이션(코드), 설정해줘, 세팅해줘, 설치해줘, 올려줘(기능), implement, create, build, add, develop, code, integrate, setup, configure
+
+**reviewer** (검증):
+리뷰, 코드 리뷰, PR 리뷰, 코드 품질, 리팩토링, 기술 부채, 코드 스멜, 검토, 점검, 분석(코드), 평가, 개선점, 봐줘, 확인해줘, 괜찮은지, 문제 없는지, 더 나은 방법, 이거 괜찮아, 개선할 점, 클린 코드, SOLID, 코드 정리, review, refactor, code quality, tech debt, clean code
+
+**debugger** (검증):
+버그, 디버깅, 에러, 오류, 예외, exception, traceback, stack trace, 안 돼, 안 됨, 안 되는데, 동작 안 해, 작동 안 해, 깨짐, 터짐, 뻗음, 멈춤, 느려짐, 무한 로딩, 하얀 화면, 빈 화면, 실패, 이상, 이슈, 장애, 충돌, crash, 500, 404, 400, timeout, 무한루프, 메모리 누수, 왜 안 돼, 왜 이래, 뭐가 문제, 원인이 뭐야, 어디가 잘못, bug, debug, error, fix, broken, fail, issue, incident
+
+**devops** (배포):
+Docker, 배포, CI/CD, 인프라, 컨테이너, 파이프라인, 모니터링, 로깅, 알림, 서버, nginx, Dockerfile, docker-compose, GitHub Actions, 환경변수, SSL, HTTPS, 도메인, DNS, 로드밸런서, 스케일링, 무중단, 헬스체크, 대시보드, 올려줘(서버), 배포해줘, 띄워줘, deploy, container, pipeline, monitoring, logging, alert, scaling, health check
+
+**writer** (공통):
+문서, README, API 문서, ADR, 기술 문서, 아키텍처 문서, 문서화, 가이드, 매뉴얼, 튜토리얼, 런북, 변경 로그, CHANGELOG, 온보딩, 사용법, 설치 가이드, 기여 가이드, 릴리스 노트, 정리해줘(문서), 설명해줘(구조), documentation, guide, manual, runbook, changelog, release notes
 
 - **MUST**(planner~devops): 키워드 매칭 시 에이전트 스폰 없이 직접 응답 금지.
 - **SHOULD**(writer): "writer 에이전트를 실행할까요?" 제안 후 진행.
@@ -116,7 +141,7 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 
 ### Phase Gate
 
-Complex: 기획→설계→구현→검증→배포 순서 필수. Medium: 설계→구현→검증. Simple: 구현→검증.
+Complex: 기획→스펙→설계→구현→검증→배포 순서 필수. Medium: (스펙→)설계→구현→검증. Simple: 구현→검증.
 
 ## Safety Rules
 

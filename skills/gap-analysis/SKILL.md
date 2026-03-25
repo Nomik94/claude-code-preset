@@ -11,6 +11,15 @@ description: |
 
 설계 문서 또는 스펙과 실제 구현을 비교하여 불일치를 찾음.
 
+## 기준 문서 우선순위
+
+1. `docs/specs/{feature-name}.spec.md` (LOCKED 상태) — **최우선**
+2. 설계 문서 (architect 산출물, docs/plans/ 등)
+3. PRD (planner 산출물)
+4. 사용자가 직접 제공한 요구사항
+
+스펙 문서가 있으면 §3(사용자 시나리오), §4(입출력), §5(스코프), §7(Constitution 체크)를 기준으로 비교.
+
 ## 비교 차원
 
 각 차원을 독립적으로 분석.
@@ -96,6 +105,7 @@ match_rate = (matched + partial * 0.5) / total_designed_items * 100
 - Match Rate: XX%
 - Iteration: N/5
 - Status: PASS / ITERATE / REVIEW_NEEDED
+- Spec: docs/specs/{feature}.spec.md (LOCKED) | 없음
 
 ### Dimension Scores
 | Dimension | Matched | Partial | Missing | Extra | Score |
@@ -117,6 +127,16 @@ match_rate = (matched + partial * 0.5) / total_designed_items * 100
 
 ### Action Items
 1. [각 갭에 대한 구체적 수정 사항]
+
+### Spec Update Needed (스펙 문서 업데이트 필요 시)
+- [구현 과정에서 발견된 스펙 보완 사항]
+→ Status를 REVIEW로 변경 후 스펙 수정
 ```
+
+## 완료 시 스펙 상태 업데이트
+
+Match Rate >= 90%이고 모든 갭이 해소되면:
+- 스펙 문서 Status를 `IMPLEMENTED`로 변경
+- 구현 중 발견된 스펙 보완 사항이 있으면 스펙도 함께 업데이트
 
 자주 발생하는 실수는 이 디렉토리의 gotchas.md를 참조하라.
