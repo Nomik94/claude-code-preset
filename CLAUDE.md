@@ -81,7 +81,7 @@ Worker prompt 필수: `CONTEXT: WORKER agent. STACK: {detected_stack}`
 ### Model Selection
 | Task | Model | Count |
 |------|-------|-------|
-| 탐색, 간단한 검색 | haiku | 5-10 병렬 |
+| 탐색, 간단한 검색 | opus | 5-10 병렬 |
 | 구현, 리뷰 | opus | 1-3 |
 | 아키텍처, 복잡한 추론 | opus | 1-2 |
 
