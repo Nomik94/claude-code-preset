@@ -134,6 +134,11 @@ def main():
     try:
         path = find_transcript()
         if not path:
+            env_val = os.environ.get("CLAUDE_TRANSCRIPT_PATH", "")
+            if not env_val:
+                print("session-summary: CLAUDE_TRANSCRIPT_PATH 환경변수가 설정되지 않았습니다. 세션 요약을 건너뜁니다.", file=sys.stderr)
+            else:
+                print(f"session-summary: CLAUDE_TRANSCRIPT_PATH 파일을 찾을 수 없습니다: {env_val}", file=sys.stderr)
             return
 
         user_messages, files_edited, files_created = parse_transcript(path)

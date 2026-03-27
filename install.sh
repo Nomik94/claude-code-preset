@@ -5,6 +5,9 @@
 
 set -e
 
+# 원격 실행 시 임시 디렉토리 정리를 보장하는 trap (로컬 실행 시 TEMP_DIR 미설정이므로 무해)
+trap 'rm -rf "${TEMP_DIR:-}"' EXIT
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -53,6 +56,10 @@ fi
 if ! command -v python3 &> /dev/null; then
   echo -e "${RED}python3 is required but not installed.${NC}"
   exit 1
+fi
+
+if ! command -v jq &>/dev/null; then
+  echo -e "${YELLOW}⚠ jq가 설치되지 않았습니다. PreToolUse 안전 훅 등 일부 기능이 제한됩니다.${NC}"
 fi
 
 # Check if already installed
@@ -406,10 +413,7 @@ with open('$MANIFEST_FILE', 'w') as f:
 " 2>/dev/null
 echo -e "${GREEN}✓ Manifest written${NC}"
 
-# Cleanup temp directory
-if [[ -n "${TEMP_DIR:-}" ]] && [[ -d "${TEMP_DIR:-}" ]]; then
-  rm -rf "$TEMP_DIR"
-fi
+# TEMP_DIR cleanup은 EXIT trap이 처리
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════╗${NC}"

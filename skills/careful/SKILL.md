@@ -18,6 +18,10 @@ hooks:
 
 프로덕션 환경 작업 시 위험 명령을 자동 차단합니다.
 
+## pre-tool-use-safety.sh와의 차이
+
+`pre-tool-use-safety.sh`는 항상 활성화되는 기본 안전망으로 `rm -rf /`, `DROP TABLE`, `git push --force` 등 핵심 위험 명령만 차단합니다. `/careful`은 프로덕션 환경 작업 시 활성화하는 강화 모드로, `kubectl delete`, `docker system prune`, `terraform destroy` 등 추가 인프라 명령까지 차단합니다.
+
 ## 차단 대상
 | 명령 | 이유 |
 |------|------|

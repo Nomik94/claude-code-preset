@@ -174,6 +174,7 @@ Complex: 기획→스펙→설계→구현→검증→배포 순서 필수. Medi
 | 이벤트 | Hook | 동작 |
 |--------|------|------|
 | PreToolUse | `pre-tool-use-safety.sh` | 위험 명령 사전 차단 |
+| PostToolUse | `post-tool-use.sh` | Edit/Write 후 자동 포맷·타입체크·디버그코드·컨벤션 검사 |
 | SessionStart | `session-lessons.sh` | memory/ 교훈 안내 |
 | SessionEnd | `session-summary.py` | `memory/last-session.md` 생성 |
 | Stop | `todo-continuation.sh` | 미완료 태스크 시 자동 계속 |
