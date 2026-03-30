@@ -12,8 +12,6 @@ files:
 
 # SQLAlchemy 2.0 Async + Alembic 스킬
 
----
-
 ## 1. Base & Mixin
 
 ```python
@@ -32,8 +30,6 @@ class SoftDeleteMixin:
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
 ```
 
----
-
 ## 2. Session 관리
 
 ```python
@@ -50,70 +46,53 @@ async_session_factory = async_sessionmaker(
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
 | `pool_size` | 20 | steady-state connections |
-| `max_overflow` | 10 | burst capacity (total max = 30) |
-| `pool_pre_ping` | True | detect stale connections |
-| `pool_recycle` | 3600 | avoid DB timeout |
+| `max_overflow` | 10 | burst (total max = 30) |
+| `pool_pre_ping` | True | stale connection 감지 |
+| `pool_recycle` | 3600 | DB timeout 방지 |
 
----
+## 3. Relationship — lazy="raise" 기본
 
-## 3. Relationship -- lazy="raise" 기본
-
-**MUST: 모든 relationship에 `lazy="raise"` 설정.** N+1 쿼리를 속성 접근 시점에 `InvalidRequestError`로 감지.
+**MUST: 모든 relationship에 `lazy="raise"`.** N+1을 속성 접근 시 `InvalidRequestError`로 감지.
 
 ```python
 posts: Mapped[list["PostModel"]] = relationship(back_populates="author", lazy="raise")
 author: Mapped["UserModel"] = relationship(back_populates="posts", lazy="raise")
 ```
 
-Eager loading 선택:
 | 로딩 전략 | 사용 시점 |
 |-----------|---------|
 | `selectinload` | 컬렉션 (one-to-many, many-to-many) |
 | `joinedload` | 스칼라 관계 (many-to-one) |
 
-> 쿼리 패턴 상세 및 N+1 방지 코드 예시는 references/query-patterns.md 참조
+> 쿼리 패턴 및 N+1 방지 예시 → references/query-patterns.md
 
----
+## 4. Repository 패턴
+- `model_class` MUST on every concrete repository
+- Domain Protocol in `domain/` — zero SQLAlchemy imports
+- `_to_entity`/`_to_model` 매핑 메서드 repository에 위치
+- `flush()` 사용, `commit()`은 service/use-case 경계에서
 
-## 4. Repository 패턴 핵심 규칙
+> BaseRepository, Protocol→Adapter 패턴 → references/repository-pattern.md
 
-- `model_class` MUST be set on every concrete repository
-- Domain Protocol in `domain/` -- zero SQLAlchemy imports
-- Entity-Model mapping methods (`_to_entity`, `_to_model`) MUST be in repository
-- Use `flush()` not `commit()` -- commit at service/use-case boundary
-
-> BaseRepository 전체 코드, Protocol -> Adapter 패턴은 references/repository-pattern.md 참조
-
----
-
-## 5. Transaction 패턴
-
+## 5. Transaction
 - Application Service에서 단일 `commit()` (Unit of Work)
-- 중첩 트랜잭션: `db.begin_nested()` (SAVEPOINT)
-
----
+- 중첩: `db.begin_nested()` (SAVEPOINT)
 
 ## 6. 인덱스 전략
+- 높은 카디널리티 → 인덱스 (email, username)
+- 낮은 카디널리티 → 부분 인덱스
+- 복합 인덱스: WHERE 빈번 컬럼이 앞 (좌측 접두어)
+- constraint 명명: fk_*, ix_*, uq_*, ck_*
 
-- 높은 카디널리티 컬럼에 인덱스 (email, username)
-- 낮은 카디널리티는 부분 인덱스 고려
-- 복합 인덱스: 좌측 접두어 규칙 (WHERE 빈번 컬럼이 앞)
-- constraint 이름 명시: fk_*, ix_*, uq_*, ck_*
+## 7. Alembic 마이그레이션
+1. 서술적 메시지: "add users table"
+2. 1 revision = 1 논리적 변경
+3. 데이터 마이그레이션 ↔ 스키마 변경 분리
+4. 모든 upgrade에 downgrade 작성
+5. server_default 사용 (DB-level)
+6. CI: upgrade→downgrade→upgrade 왕복 테스트
 
----
-
-## 7. 마이그레이션 (Alembic) 핵심 규칙
-
-1. 메시지는 서술적으로: "add users table"
-2. 하나의 revision = 하나의 논리적 변경
-3. 데이터 마이그레이션은 스키마 변경과 분리
-4. 모든 upgrade에 대응하는 downgrade 작성
-5. server_default 사용 (Python default 아닌 DB-level)
-6. CI에서 upgrade -> downgrade -> upgrade 왕복 테스트
-
-> 초기 설정, env.py 코드, 명령어, 마이그레이션 패턴은 references/migration-guide.md 참조
-
----
+> 초기 설정, env.py, 명령어 → references/migration-guide.md
 
 ## Quick Reference
 
@@ -121,9 +100,8 @@ Eager loading 선택:
 |------|--------|
 | `lazy="raise"` | MUST on all relationships |
 | `expire_on_commit=False` | MUST on async sessionmaker |
-| `selectinload` | collections (one-to-many, many-to-many) |
-| `joinedload` | scalar relations (many-to-one) |
-| `flush()` in repository | `commit()` in application service |
-| `BaseRepository[ModelType]` | inherit for CRUD, extend for domain queries |
+| `selectinload` | collections |
+| `joinedload` | scalar relations |
+| `flush()` in repository | `commit()` in service |
 | `pool_pre_ping=True` | MUST for production |
 | constraint naming | fk_*, ix_*, uq_*, ck_* |

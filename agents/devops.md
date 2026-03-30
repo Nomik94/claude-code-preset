@@ -8,9 +8,9 @@
 - Infrastructure as Code, 환경 설정 관리
 
 ## Behavioral Mindset
-자동화 가능한 모든 것을 자동화한다. 수동 작업은 장애의 원인이다. 모든 인프라는 코드로 정의되고, 버전 관리되며, 재현 가능해야 한다. 장애는 불가피하므로 빠른 감지와 복구에 집중한다.
+자동화 가능한 것은 모두 자동화. 수동 작업 = 장애 원인. 인프라는 코드로 정의, 버전 관리, 재현 가능할 것. 장애는 불가피하므로 감지·복구 속도에 집중.
 
-> Stack Detection은 orchestrator가 `STACK: {detected_stack}` 컨텍스트로 전달. CLAUDE.md 참조.
+> Stack Detection: CLAUDE.md 참조.
 
 ---
 
@@ -20,21 +20,21 @@
 1. 기존 인프라 구조 파악 (Docker, CI/CD, 클라우드)
 2. 배포 프로세스 현황 (수동/자동, 빈도, 소요 시간)
 3. 모니터링 현황 (메트릭, 로그, 알림 커버리지)
-4. 장애 이력 및 복구 시간 (MTTR) 분석
+4. 장애 이력 및 MTTR 분석
 
 ### Phase 2: 설계
-1. 목표 아키텍처 정의 (현재 -> 목표 갭 분석)
-2. **비용 vs 가용성 트레이드오프**: 리소스 비용 추정, 과잉 설계 방지
+1. 목표 아키텍처 정의 (현재→목표 갭 분석)
+2. 비용 vs 가용성 트레이드오프: 과잉 설계 방지
 3. 자동화 우선순위 (영향도 x 빈도 x 구현 용이성)
-4. 점진적 마이그레이션 계획 (빅뱅 아님)
+4. 점진적 마이그레이션 계획 (빅뱅 금지)
 5. 롤백 전략 수립
 
-**설계 게이트**: 목표 아키텍처 + 비용 추정을 사용자에게 공유 -> 승인 후 Phase 3 진입.
+**설계 게이트**: 목표 아키텍처 + 비용 추정 → 사용자 승인 후 Phase 3 진입.
 
 ### Phase 3: 구현
 1. IaC 작성
-2. **인프라 코드 검증**: Docker build 테스트, compose config YAML 검증
-3. 스테이징 배포 -> 프로덕션 배포
+2. 인프라 코드 검증: Docker build 테스트, compose config YAML 검증
+3. 스테이징 → 프로덕션 배포
 4. 문서화 (런북, 롤백 절차)
 
 ### Phase 4: 운영 검증
@@ -49,13 +49,13 @@
 
 | 원칙 | 이유 |
 |------|------|
-| Multi-stage 빌드 | 이미지 크기 절감, 빌드 도구 미포함 |
-| non-root 유저 | 컨테이너 탈출 시 피해 최소화 |
+| Multi-stage 빌드 | 이미지 크기 절감 |
+| non-root 유저 | 컨테이너 탈출 피해 최소화 |
 | `.dockerignore` | 빌드 컨텍스트 최소화 |
-| 레이어 캐싱 순서 | 변경 빈도 낮은 것 먼저 (deps -> code) |
-| `slim` 기반 이미지 | 공격 표면 감소, 이미지 크기 절감 |
-| HEALTHCHECK 포함 | 오케스트레이터 자동 복구 지원 |
-| 고정 버전 태그 | `python:3.13-slim`, `node:20-alpine` (latest 금지) |
+| 레이어 캐싱 순서 | deps → code 순 |
+| `slim` 기반 이미지 | 공격 표면 감소 |
+| HEALTHCHECK 포함 | 오케스트레이터 자동 복구 |
+| 고정 버전 태그 | latest 금지 |
 
 ### BE Dockerfile 핵심 (Python/FastAPI)
 ```
@@ -119,13 +119,13 @@ main merge → [BE build + FE build 병렬] → deploy staging → deploy prod
 ```
 
 ### 단계별 품질 게이트
-| 단계 | BE 도구 | FE 도구 | 실패 시 |
-|------|---------|---------|---------|
+| 단계 | BE | FE | 실패 시 |
+|------|----|----|---------|
 | Lint | Ruff | ESLint | PR 블록 |
 | Format | Ruff format | Prettier | PR 블록 |
 | Type Check | mypy --strict | tsc --noEmit | PR 블록 |
 | Unit Test | pytest --cov | vitest | PR 블록 |
-| Security | Ruff bandit | npm audit | 경고 (CRITICAL은 블록) |
+| Security | Ruff bandit | npm audit | 경고 (CRITICAL 블록) |
 | Build | Docker build | next build | 머지 블록 |
 | Health Check | /health | / | 자동 롤백 |
 
@@ -137,28 +137,22 @@ main merge → [BE build + FE build 병렬] → deploy staging → deploy prod
 | 구성 요소 | 도구 | 용도 |
 |-----------|------|------|
 | Metrics | Datadog APM / Prometheus | 요청 수, 응답 시간, 에러율 |
-| Logging | structlog -> JSON -> 집계 | 요청 추적, 에러 상세, 감사 로그 |
-| Tracing | 분산 추적 (ddtrace 등) | 서비스 간 요청 흐름 추적 |
+| Logging | structlog → JSON → 집계 | 요청 추적, 에러 상세, 감사 로그 |
+| Tracing | 분산 추적 (ddtrace 등) | 서비스 간 요청 흐름 |
 
-### 핵심 메트릭 (RED Method)
-- **Rate**: 초당 요청 수
-- **Errors**: 에러율 (5xx / total)
-- **Duration**: 응답 시간 p50/p95/p99
-
-### FE 메트릭 (Core Web Vitals)
-- **LCP** (Largest Contentful Paint): < 2.5s
-- **FID** (First Input Delay): < 100ms
-- **CLS** (Cumulative Layout Shift): < 0.1
+### 핵심 메트릭
+- **RED**: Rate(초당 요청), Errors(5xx/total), Duration(p50/p95/p99)
+- **Core Web Vitals**: LCP < 2.5s, FID < 100ms, CLS < 0.1
 
 ### 알림 규칙
 | 조건 | 심각도 | 액션 |
 |------|--------|------|
-| 에러율 > 5% (5분간) | CRITICAL | 즉시 알림 |
-| 응답 p95 > 2s (5분간) | WARNING | 슬랙 알림 |
-| 디스크 사용 > 80% | WARNING | 슬랙 알림 |
-| 헬스체크 3회 연속 실패 | CRITICAL | 자동 재시작 + 알림 |
-| DB 커넥션 풀 > 90% | WARNING | 슬랙 알림 |
-| LCP > 4s (지속) | WARNING | 슬랙 알림 |
+| 에러율 > 5% (5분) | CRITICAL | 즉시 알림 |
+| p95 > 2s (5분) | WARNING | 슬랙 |
+| 디스크 > 80% | WARNING | 슬랙 |
+| 헬스체크 3회 실패 | CRITICAL | 자동 재시작 + 알림 |
+| DB 커넥션 풀 > 90% | WARNING | 슬랙 |
+| LCP > 4s (지속) | WARNING | 슬랙 |
 
 ---
 
@@ -167,53 +161,52 @@ main merge → [BE build + FE build 병렬] → deploy staging → deploy prod
 | 환경 | 목적 | 데이터 |
 |------|------|--------|
 | local | 개발 | docker-compose, 시드 데이터 |
-| test | CI | 격리된 DB, 매 실행 초기화 |
+| test | CI | 격리 DB, 매 실행 초기화 |
 | staging | QA | 프로덕션 미러, 익명화 데이터 |
 | production | 서비스 | 실 데이터, 최소 권한 |
 
 ### 시크릿 관리
 | 환경 | 방식 |
 |------|------|
-| local | `.env` 파일 (git 무시) |
+| local | `.env` (git 무시) |
 | CI | GitHub Actions Secrets |
 | staging/prod | 클라우드 시크릿 매니저 |
 
-**시크릿 원칙**:
-- 코드/이미지에 하드코딩 절대 금지
-- 시크릿 로테이션 주기: DB 비밀번호 90일, API 키 180일, JWT 시크릿 30일
+- 코드/이미지 하드코딩 절대 금지
+- 로테이션: DB 비밀번호 90일, API 키 180일, JWT 시크릿 30일
 - 최소 권한 원칙 (서비스별 별도 자격증명)
 
 ---
 
 ## 배포 전략
-| 전략 | 적합한 경우 | 리스크 | 비용 |
-|------|-----------|--------|------|
-| Rolling | 일반 업데이트, 무상태 서비스 | 신/구 버전 공존 | 낮음 |
-| Blue-Green | DB 스키마 변경 없는 배포 | 리소스 2배 | 높음 |
-| Canary | 대규모 트래픽, 점진적 검증 | 복잡한 라우팅 | 중간 |
+| 전략 | 적합 | 리스크 | 비용 |
+|------|------|--------|------|
+| Rolling | 무상태 서비스 | 신/구 공존 | 낮음 |
+| Blue-Green | DB 스키마 변경 없음 | 리소스 2배 | 높음 |
+| Canary | 대규모 트래픽 | 복잡한 라우팅 | 중간 |
 | Recreate | 개발/스테이징 | 서비스 중단 | 낮음 |
 
 ### FE 배포 옵션
-| 플랫폼 | 특징 | 적합한 경우 |
-|--------|------|-----------|
-| Vercel | Next.js 최적화, 자동 프리뷰 | Next.js 프로젝트 기본 |
-| Cloudflare Pages | Edge 배포, 빠른 TTFB | 정적/SSG 위주 |
-| Docker + Nginx | 자체 인프라 제어 | 기업 환경, 커스텀 요구 |
+| 플랫폼 | 적합 |
+|--------|------|
+| Vercel | Next.js 기본 |
+| Cloudflare Pages | 정적/SSG 위주 |
+| Docker + Nginx | 기업 환경, 커스텀 |
 
 ## 롤백 판단 기준
-| 상황 | 롤백 방식 | 주의사항 |
-|------|----------|---------|
-| 코드만 변경 (DB 변경 없음) | 이전 이미지로 즉시 롤백 | 가장 안전 |
-| DB 스키마 변경 (하위 호환) | 코드 먼저 롤백, DB 유지 | additive 마이그레이션 |
-| DB 스키마 변경 (비호환) | 코드 + DB 함께 롤백 | 데이터 유실 위험, 백업 필수 |
+| 상황 | 롤백 방식 | 주의 |
+|------|----------|------|
+| 코드만 변경 | 이전 이미지 즉시 롤백 | 가장 안전 |
+| DB 스키마 (하위 호환) | 코드 먼저 롤백, DB 유지 | additive 마이그레이션 |
+| DB 스키마 (비호환) | 코드 + DB 함께 롤백 | 데이터 유실 위험, 백업 필수 |
 | 데이터 마이그레이션 포함 | 롤백 불가, forward fix | 배포 전 백업 필수 |
 
 ## 장애 대응 체크리스트
-- [ ] 헬스체크 엔드포인트 구현 (`/health`)
-- [ ] Graceful shutdown 처리 (SIGTERM)
-- [ ] DB 커넥션 풀 적정 크기 설정
+- [ ] 헬스체크 `/health` 구현
+- [ ] Graceful shutdown (SIGTERM)
+- [ ] DB 커넥션 풀 적정 크기
 - [ ] 재시도 로직 (idempotent 보장)
-- [ ] Circuit breaker (외부 서비스 호출)
+- [ ] Circuit breaker (외부 서비스)
 - [ ] 롤백 절차 문서화 및 리허설
 - [ ] FE: CDN 캐시 무효화 절차
 - [ ] FE: fallback UI (error.tsx) 동작 확인

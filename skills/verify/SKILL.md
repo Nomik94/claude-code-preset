@@ -32,41 +32,40 @@ description: |
 
 | Stack | 검사 항목 |
 |-------|----------|
-| BE | 레이어 위반 (controller → repository 직접 호출), 순환 import, domain/에 framework import |
+| BE | 레이어 위반, 순환 import, domain/에 framework import |
 | FE | Server/Client Component 분리, barrel export 순환, 상태관리 레이어 위반 |
-| 공통 | 순환 의존성 검사 |
 
 ### 4. Test
 
 | Stack | 명령어 |
 |-------|--------|
 | BE | `poetry run pytest --cov=app --cov-report=term-missing --cov-fail-under=80` |
-| FE | `pnpm test --coverage` (jest 또는 vitest) |
+| FE | `pnpm test --coverage` |
 
 ### 5. Security
 
-> 보안 상세는 `/security-audit` 참조.
+> 상세는 `/security-audit` 참조.
 
 | Stack | 검사 항목 |
 |-------|----------|
-| BE | 하드코딩 시크릿, SQL injection (raw query), `S` 규칙 (`ruff check --select S`) |
-| FE | XSS 위험 패턴, 하드코딩 API 키, 민감 데이터 클라이언트 노출 |
-| 공통 | `.env` 파일 커밋 여부, 시크릿 패턴 스캔 |
+| BE | 하드코딩 시크릿, SQL injection, `ruff check --select S` |
+| FE | XSS, 하드코딩 API 키, 민감 데이터 클라이언트 노출 |
+| 공통 | `.env` 커밋 여부, 시크릿 패턴 스캔 |
 
 ### 6. Dependencies
 
 | Stack | 검사 항목 |
 |-------|----------|
-| BE | `poetry check` / `poetry lock --check` / 미사용 의존성 (deptry) |
-| FE | `pnpm audit` / 미사용 의존성 검사 |
+| BE | `poetry check` / `poetry lock --check` / 미사용 의존성 |
+| FE | `pnpm audit` / 미사용 의존성 |
 
 ### 7. Quality
 
 | Stack | 검사 항목 |
 |-------|----------|
-| BE | 코드 복잡도, dead code (`vulture`), 네이밍 컨벤션 (snake_case) |
-| FE | 컴포넌트 크기, 중복 코드, 네이밍 컨벤션 (camelCase/PascalCase) |
-| 공통 | 파일 크기 (300줄 초과 경고), TODO/FIXME 잔존 |
+| BE | 코드 복잡도, dead code, 네이밍 (snake_case) |
+| FE | 컴포넌트 크기, 중복 코드, 네이밍 (camelCase/PascalCase) |
+| 공통 | 파일 300줄 초과 경고, TODO/FIXME 잔존 |
 
 ## 통과 기준
 
@@ -82,11 +81,7 @@ Verify: [N]/7 passed [BE/FE/Fullstack]
 |---|------|----|----|------|
 | 1 | Lint | PASS | PASS | - |
 | 2 | Type | PASS | FAIL | FE: 3 errors |
-| 3 | Architecture | PASS | - | - |
-| 4 | Test | PASS | PASS | BE: 95% cov |
-| 5 | Security | PASS | PASS | - |
-| 6 | Dependencies | PASS | PASS | - |
-| 7 | Quality | WARN | PASS | BE: 1 file >300 lines |
+...
 
 → [검증 완료 / 검증 실패: 수정 필요 항목]
 ```
